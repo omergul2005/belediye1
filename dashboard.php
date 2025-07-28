@@ -14,12 +14,21 @@ if ($_SESSION['role'] == 'admin') {
         $user_id = $_POST['user_id'];
         $new_status = $_POST['new_status'];
         
-        try {
-            $stmt = $pdo->prepare("UPDATE users SET status = ? WHERE id = ?");
-            $stmt->execute([$new_status, $user_id]);
-            $success_message = "Kullanıcı durumu başarıyla güncellendi.";
-        } catch(PDOException $e) {
-            $error_message = "Durum güncellenirken hata oluştu.";
+        // Admin kullanıcıların durumunu değiştirmeyi engelle
+        $check_stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $check_stmt->execute([$user_id]);
+        $user_role = $check_stmt->fetchColumn();
+        
+        if ($user_role == 'admin') {
+            $error_message = "Admin kullanıcıların durumu değiştirilemez.";
+        } else {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET status = ? WHERE id = ?");
+                $stmt->execute([$new_status, $user_id]);
+                $success_message = "Kullanıcı durumu başarıyla güncellendi.";
+            } catch(PDOException $e) {
+                $error_message = "Durum güncellenirken hata oluştu.";
+            }
         }
     }
     
@@ -28,7 +37,14 @@ if ($_SESSION['role'] == 'admin') {
         $user_id = $_POST['user_id'];
         $new_password = $_POST['new_password'];
         
-        if (!empty($new_password)) {
+        // Admin kullanıcıların şifresini değiştirmeyi engelle
+        $check_stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $check_stmt->execute([$user_id]);
+        $user_role = $check_stmt->fetchColumn();
+        
+        if ($user_role == 'admin') {
+            $error_message = "Admin kullanıcıların şifresi değiştirilemez.";
+        } elseif (!empty($new_password)) {
             try {
                 $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
                 $stmt->execute([$new_password, $user_id]);
@@ -135,6 +151,9 @@ if ($_SESSION['role'] == 'admin') {
                                 </td>
                                 <td><?php echo date('d.m.Y H:i', strtotime($user['created_at'])); ?></td>
                                 <td>
+                                    <?php if ($user['role'] == 'admin'): ?>
+                                        <span style="color: #666; font-style: italic;">🔒 Korumalı Hesap</span>
+                                    <?php else: ?>
                                     <div class="user-actions">
                                         <!-- Durum Güncelleme -->
                                         <form method="POST" style="display: inline-block; margin-right: 10px;">
@@ -163,6 +182,7 @@ if ($_SESSION['role'] == 'admin') {
                                             <button type="button" onclick="hidePasswordForm(<?php echo $user['id']; ?>)" class="btn-small">İptal</button>
                                         </form>
                                     </div>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
