@@ -133,8 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <!-- Demo Bilgileri -->
             <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 12px; color: #666;">
                 <strong>Demo Giriş Bilgileri:</strong><br>
-                Admin: <code>admin</code> / <code>12345</code> veya <code>2025</code><br>
-                Yönetici: <code>yonetici</code> / <code>panel</code>
+                Admin: <code>admin</code> = <code>12345</code> veya <code>2025</code><br>
+                User: <code>omer</code> = <code>2005</code>
             </div>
         </div>
 

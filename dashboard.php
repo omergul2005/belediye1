@@ -92,8 +92,8 @@ if ($_SESSION['role'] == 'admin') {
             <h3>Hoşgeldiniz, <?php echo htmlspecialchars(isset($_SESSION['full_name']) ? $_SESSION['full_name'] : $_SESSION['username']); ?>!</h3>
             <p>
                 <strong>Rol:</strong> <?php echo strtoupper($_SESSION['role']); ?> | 
-                <strong>Giriş Zamanı:</strong> <?php echo date('d.m.Y H:i', $_SESSION['login_time']); ?> |
-                <strong>IP:</strong> <?php echo $_SESSION['ip_address']; ?>
+                <strong>Giriş Zamanı:</strong> <?php echo date('d.m.Y H:i', $_SESSION['login_time']); ?> 
+            
                 <?php if (isset($_SESSION['department'])): ?>
                 | <strong>Birim:</strong> <?php echo htmlspecialchars($_SESSION['department']); ?>
                 <?php endif; ?>
