@@ -526,16 +526,6 @@ if ($_SESSION['role'] == 'admin') {
                         <h5>Firma Borçları</h5>
                         <p>Tüm firmaların borç durumunu görüntüle</p>
                     </a>
-                    <a href="borc_takip.php" class="menu-card">
-                        <div class="menu-icon">💰</div>
-                        <h5>Taksit Takibi</h5>
-                        <p>Aylık taksit ödemelerini takip et</p>
-                    </a>
-                    <a href="borc_takip.php" class="menu-card">
-                        <div class="menu-icon">📈</div>
-                        <h5>Raporlar</h5>
-                        <p>Borç durumu raporlarını incele</p>
-                    </a>
                 </div>
             </div>
 
@@ -666,12 +656,6 @@ if ($_SESSION['role'] == 'admin') {
                     <?php endif; ?>
                 </div>
                 
-            <?php else: ?>
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <div style="font-size: 48px; margin-bottom: 20px;">🏢</div>
-                    <h4 style="color: #2c5aa0; margin-bottom: 15px;">Hoş Geldiniz</h4>
-                    <p>Sisteme başarıyla giriş yaptınız. Yetkiniz dahilindeki işlemleri gerçekleştirebilirsiniz.</p>
-                </div>
             <?php endif; ?>
             
         </div>
@@ -699,13 +683,13 @@ if ($_SESSION['role'] == 'admin') {
                 // Şifreyi gizle
                 hiddenSpan.style.display = 'inline';
                 visibleSpan.style.display = 'none';
-                eyeBtn.innerHTML = '👁️';
+                eyeBtn.innerHTML = '🔍';
                 eyeBtn.title = 'Şifreyi Göster';
             } else {
                 // Şifreyi göster
                 hiddenSpan.style.display = 'none';
                 visibleSpan.style.display = 'inline';
-                eyeBtn.innerHTML = '🙈';
+                eyeBtn.innerHTML = '🔓';
                 eyeBtn.title = 'Şifreyi Gizle';
             }
         }
