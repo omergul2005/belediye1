@@ -206,8 +206,8 @@ if ($_SESSION['role'] == 'admin') {
             padding: 12px 30px;
             text-decoration: none;
             border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 1000;
             transition: all 0.3s ease;
             display: inline-block;
         }

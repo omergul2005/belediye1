@@ -394,7 +394,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         }
         
         .header .user-info {
-            font-size: 14px;
+            font-size: 40 px;
             opacity: 0.9;
         }
         
@@ -945,8 +945,9 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         <div class="header">
             <h1>📊 Konya Belediyesi - Borç Takip Sistemi</h1>
             <div class="user-info">
+                <a href="dashboard.php">🏠 Anasayfa</a>
                 <?php echo htmlspecialchars($_SESSION['username']); ?> - <?php echo strtoupper($_SESSION['role']); ?>
-                | <a href="dashboard.php">🏠 Anasayfa</a>
+                | 
             </div>
         </div>
         
