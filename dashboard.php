@@ -92,7 +92,7 @@ if ($_SESSION['role'] == 'admin') {
     
     // Tüm kullanıcıları getir (şifreler dahil)
     try {
-        $stmt = $pdo->prepare("SELECT id, username, password, status, role, created_at FROM users ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT id, username, password, status, role, created_at FROM users ORDER BY created_at ASC");
         $stmt->execute();
         $users = $stmt->fetchAll();
     } catch(PDOException $e) {
@@ -570,9 +570,9 @@ if ($_SESSION['role'] == 'admin') {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($users as $user): ?>
+                            <?php foreach ($users as $key=>$user): ?>
                             <tr>
-                                <td><?php echo $user['id']; ?></td>
+                                <td><?php echo $key+1; ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($user['username']); ?></strong>
                                     <?php if ($user['id'] == $_SESSION['kullanici_id']): ?>

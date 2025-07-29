@@ -314,7 +314,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <img src="konya-logo.png" alt="Konya Belediyesi" class="logo-img">
             </div>
             <h1>Konya Büyükşehir Belediyesi</h1>
-            <h2>Yönetim Paneli<br>Güvenli Giriş</h2>
+            <h2>Yönetim Paneli</h2>
         </div>
         
         <?php if ($success_message): ?>
