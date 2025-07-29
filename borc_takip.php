@@ -996,11 +996,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             
             <!-- Yıllık Özet - YENİ EKLENEN -->
             <?php if (!empty($yearly_breakdown)): ?>
-            <div style="text-align: center; margin: 20px 0;">
-                <button id="yearlyToggleBtn" class="btn btn-primary" onclick="toggleYearlyBreakdown()">📊 Yıllık Borç Özeti</button>
-            </div>
-            
-            <div id="yearlyBreakdown" class="yearly-summary" style="display: none;">
+            <div class="yearly-summary">
                 <h4>📅 Yıllık Borç Özeti</h4>
                 <div class="year-grid">
                     <?php foreach ($yearly_breakdown as $year => $data): ?>
