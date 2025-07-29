@@ -62,11 +62,13 @@ function showTaksitModal(firmaId) {
 function generateTaksitTable(firmaId) {
     const rows = document.querySelectorAll('#firmsTableBody tr');
     let firmaData = null;
+    let firmaAdi = '';
     
     rows.forEach(row => {
         const detayBtn = row.querySelector('a[href*="firma_detay.php?id=' + firmaId + '"]');
         if (detayBtn) {
             const cells = row.cells;
+            firmaAdi = cells[1].textContent; // Firma adını al
             firmaData = {
                 toplamBorc: parseFloat(cells[4].textContent.replace(/[₺,.]/g, '')),
                 odenenTutar: parseFloat(cells[5].textContent.replace(/[₺,.]/g, '')),
@@ -84,10 +86,13 @@ function generateTaksitTable(firmaId) {
     }
     
     let html = `
-        <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-            <strong>Toplam Taksit:</strong> ${firmaData.taksitSayisi} |
-            <strong>Aylık Ödeme:</strong> ₺${firmaData.aylikOdeme.toLocaleString()} |
-            <strong>Kalan Borç:</strong> ₺${firmaData.kalanBorc.toLocaleString()}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">${firmaAdi}</h3>
+            <div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-radius: 12px; border: 2px solid #2196f3;">
+                <strong>Toplam Taksit:</strong> ${firmaData.taksitSayisi} |
+                <strong>Aylık Ödeme:</strong> ₺${firmaData.aylikOdeme.toLocaleString()} |
+                <strong>Kalan Borç:</strong> ₺${firmaData.kalanBorc.toLocaleString()}
+            </div>
         </div>
         <div style="overflow-x: auto;">
         <table class="firms-table" style="width: 100%; min-width: 700px;">
@@ -118,8 +123,13 @@ function generateTaksitTable(firmaId) {
         const taksitDate = new Date(baslangicDate);
         taksitDate.setDate(taksitDate.getDate() + ((i - 1) * 30)); // Her ay 30 gün
         
-        const gecikmeDate = new Date(taksitDate);
-        gecikmeDate.setDate(gecikmeDate.getDate() + 15); // 15 gün gecikme
+        // Vade tarihi = taksit tarihi + 30 gün
+        const vadeDate = new Date(taksitDate);
+        vadeDate.setDate(vadeDate.getDate() + 30);
+        
+        // Gecikme tarihi = vade tarihi + 15 gün
+        const gecikmeDate = new Date(vadeDate);
+        gecikmeDate.setDate(gecikmeDate.getDate() + 15);
         
         let durum = '';
         let durumClass = '';
@@ -131,7 +141,7 @@ function generateTaksitTable(firmaId) {
         if (i <= odenenTaksitSayisi) {
             durum = 'ÖDENDİ';
             durumClass = 'status-badge status-tamamlandi';
-            odemeGecmisi = `₺${asilTutar.toLocaleString()}<br><small>${taksitDate.toLocaleDateString('tr-TR')}</small>`;
+            odemeGecmisi = `₺${asilTutar.toLocaleString()}<br><small>${vadeDate.toLocaleDateString('tr-TR')}</small>`;
         } else if (firmaData.kalanBorc <= 0) {
             durum = 'TAMAMLANDI';
             durumClass = 'status-badge status-tamamlandi';
@@ -140,8 +150,8 @@ function generateTaksitTable(firmaId) {
             durumClass = 'status-badge status-gecikme';
             gecikmeFaizi = asilTutar * 0.02; // %2 faiz
             toplamTutar = asilTutar + gecikmeFaizi;
-        } else if (today > taksitDate) {
-            durum = 'VADESİ GEÇTİ';
+        } else if (today > vadeDate) {
+            durum = 'ÖDENMEDİ';
             durumClass = 'status-badge status-gecikme';
         } else {
             durum = 'BEKLİYOR';
@@ -151,7 +161,7 @@ function generateTaksitTable(firmaId) {
         html += `
             <tr>
                 <td><strong>${i}</strong></td>
-                <td>${taksitDate.toLocaleDateString('tr-TR')}</td>
+                <td>${vadeDate.toLocaleDateString('tr-TR')}</td>
                 <td style="color: #2c3e50;">₺${asilTutar.toLocaleString()}</td>
                 <td style="color: #e74c3c;">${gecikmeFaizi > 0 ? '₺' + gecikmeFaizi.toLocaleString() : '-'}</td>
                 <td style="color: #27ae60; font-weight: bold;">₺${toplamTutar.toLocaleString()}</td>
@@ -164,6 +174,33 @@ function generateTaksitTable(firmaId) {
     html += '</tbody></table></div>';
     document.getElementById('taksitContent').innerHTML = html;
     document.getElementById('taksitModal').style.display = 'block';
+}
+
+// Yıllık özet toggle fonksiyonu
+function toggleYearlyBreakdown() {
+    const yearlySection = document.getElementById('yearlyBreakdown');
+    const toggleBtn = document.getElementById('yearlyToggleBtn');
+    
+    if (yearlySection.style.display === 'none' || yearlySection.style.display === '') {
+        yearlySection.style.display = 'block';
+        toggleBtn.innerHTML = '📊 Yıllık Özeti Gizle';
+        toggleBtn.classList.remove('btn-primary');
+        toggleBtn.classList.add('btn-secondary');
+    } else {
+        yearlySection.style.display = 'none';
+        toggleBtn.innerHTML = '📊 Yıllık Borç Özeti';
+        toggleBtn.classList.remove('btn-secondary');
+        toggleBtn.classList.add('btn-primary');
+    }
+}
+function capitalizeFirstLetter(input) {
+    const words = input.value.split(' ');
+    for (let i = 0; i < words.length; i++) {
+        if (words[i].length > 0) {
+            words[i] = words[i][0].toUpperCase() + words[i].substring(1).toLowerCase();
+        }
+    }
+    input.value = words.join(' ');
 }
 
 // Hızlı ödeme fonksiyonu

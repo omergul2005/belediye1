@@ -519,41 +519,108 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         /* Yıllık Özet Kartları - YENİ EKLENEN */
         .yearly-summary {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.15), rgba(155, 89, 182, 0.1));
-            padding: 25px;
-            border-radius: 15px;
-            margin: 20px 0;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            margin: 25px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 2px solid rgba(52, 152, 219, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .yearly-summary::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
         
         .yearly-summary h4 {
             color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 20px;
+            margin-bottom: 25px;
+            font-size: 26px;
             text-align: center;
+            font-weight: 700;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
         }
         
         .year-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            position: relative;
+            z-index: 2;
         }
         
         .year-card {
-            background: rgba(255,255,255,0.9);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #3498db;
-            transition: transform 0.3s ease;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .year-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .year-card:hover::before {
+            left: 100%;
         }
         
         .year-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(52, 152, 219, 0.2);
+            border-color: #3498db;
         }
         
         .year-card h5 {
             color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 18px;
+            margin-bottom: 15px;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .year-card p {
+            margin: 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .year-card p strong {
+            color: #34495e;
         }
         
         .content {
@@ -929,7 +996,11 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             
             <!-- Yıllık Özet - YENİ EKLENEN -->
             <?php if (!empty($yearly_breakdown)): ?>
-            <div class="yearly-summary">
+            <div style="text-align: center; margin: 20px 0;">
+                <button id="yearlyToggleBtn" class="btn btn-primary" onclick="toggleYearlyBreakdown()">📊 Yıllık Borç Özeti</button>
+            </div>
+            
+            <div id="yearlyBreakdown" class="yearly-summary" style="display: none;">
                 <h4>📅 Yıllık Borç Özeti</h4>
                 <div class="year-grid">
                     <?php foreach ($yearly_breakdown as $year => $data): ?>
@@ -1046,7 +1117,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             <form method="POST">
                 <div class="form-group">
                     <label>Firma Adı:</label>
-                    <input type="text" name="firma_adi" required>
+                    <input type="text" name="firma_adi" required oninput="capitalizeFirstLetter(this)">
                 </div>
                 <div class="form-group">
                     <label>Şehir:</label>
@@ -1085,7 +1156,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 <input type="hidden" name="firma_id" id="edit_firma_id">
                 <div class="form-group">
                     <label>Firma Adı:</label>
-                    <input type="text" name="firma_adi" id="edit_firma_adi" required>
+                    <input type="text" name="firma_adi" id="edit_firma_adi" required oninput="capitalizeFirstLetter(this)">
                 </div>
                 <div class="form-group">
                     <label>Şehir:</label>
