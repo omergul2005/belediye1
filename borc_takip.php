@@ -369,7 +369,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         }
         
         .container {
-            width: 100vw;
+            width: 100%;
             min-height: 100vh;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -387,6 +387,27 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-logo {
+            width: 60px;
+            height: 60px;
+            background: url('konya-logo.png') center/contain no-repeat;
+            border-radius: 12px;
+            border: 3px solid rgba(255,255,255,0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .header-logo:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
         .header h1 {
             font-size: 28px;
             font-weight: 700;
@@ -394,7 +415,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         }
         
         .header .user-info {
-            font-size: 40 px;
+            font-size: 14px;
             opacity: 0.9;
         }
         
@@ -410,6 +431,107 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         .header .user-info a:hover {
             background: rgba(255,255,255,0.2);
             transform: translateY(-2px);
+        }
+        
+        /* Büyük Yıllık Özet Butonu */
+        .btn-yearly-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #3498db 100%);
+            border: none;
+            border-radius: 20px;
+            padding: 25px 40px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+            min-width: 400px;
+            max-width: 600px;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        
+        .btn-yearly-summary::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmerButton 3s linear infinite;
+        }
+        
+        @keyframes shimmerButton {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { 
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3), 0 0 0 0 rgba(102, 126, 234, 0.4);
+            }
+            50% { 
+                box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5), 0 0 20px 5px rgba(102, 126, 234, 0.2);
+            }
+        }
+        
+        .btn-yearly-summary:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.5);
+        }
+        
+        .yearly-btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .yearly-btn-icon {
+            font-size: 36px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .yearly-btn-text {
+            flex: 1;
+            margin-left: 20px;
+            text-align: left;
+        }
+        
+        .yearly-btn-title {
+            display: block;
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+        }
+        
+        .yearly-btn-subtitle {
+            display: block;
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            font-weight: 400;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .yearly-btn-arrow {
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .btn-yearly-summary:hover .yearly-btn-arrow {
+            transform: translateX(10px);
         }
         
         .action-bar {
@@ -444,6 +566,8 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         .btn-group {
             display: flex;
             gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
         .stats-bar {
@@ -516,12 +640,39 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             font-weight: 600;
         }
         
-        /* Yıllık Özet Kartları - YENİ EKLENEN */
+        /* Yıllık Özet Modal Stili */
+        .yearly-summary-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .yearly-summary-modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin: 3% auto;
+            padding: 35px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: slideIn 0.3s ease;
+        }
+        
         .yearly-summary {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.15), rgba(155, 89, 182, 0.1));
             padding: 30px;
             border-radius: 20px;
-            margin: 25px 0;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             border: 2px solid rgba(52, 152, 219, 0.2);
             position: relative;
@@ -626,24 +777,60 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         .content {
             flex: 1;
             padding: 30px;
-            overflow-x: auto;
         }
         
         .table-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 250, 0.95));
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(52, 152, 219, 0.1);
+            position: relative;
+        }
+        
+        .table-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #9b59b6, #e74c3c, #f39c12, #27ae60);
+            background-size: 400% 100%;
+            animation: gradientMove 8s ease infinite;
+        }
+        
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
         
         .table-header {
-            background: linear-gradient(135deg, #34495e, #2c3e50);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #3498db 100%);
             color: white;
-            padding: 20px;
-            font-weight: 600;
-            font-size: 18px;
+            padding: 25px;
+            font-weight: 700;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .table-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmerHeader 4s linear infinite;
+        }
+        
+        @keyframes shimmerHeader {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
         
         .firms-table {
@@ -778,6 +965,12 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
         }
         
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+        }
+        
         .btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
@@ -905,7 +1098,119 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             font-size: 16px;
         }
         
-        @media (max-width: 768px) {
+        /* Taksit Modal Özel Stilleri */
+        .taksit-modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin: 2% auto;
+            padding: 35px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .taksit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 20px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .taksit-table th {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            padding: 15px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .taksit-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            vertical-align: middle;
+        }
+        
+        .taksit-table tbody tr:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        .refresh-bottom {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-radius: 50px;
+            pointer-events: auto;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-bottom:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        
+        /* Container'a relative position ekle */
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* Tablodaki butonlar için özel z-index */
+        .firms-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            vertical-align: middle;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .firms-table .btn {
+            position: relative;
+            z-index: 100;
+        }
+        
+        /* Header sağ tarafına margin ekle */
+        .header .user-info {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-right: 80px; /* Sayfa yenile butonu için yer aç */
+        }
+        
+        @media (max-width: 1024px) {
+            .refresh-bottom {
+                top: 70px;
+                right: 15px;
+                z-index: 1;
+                transform: scale(0.85);
+                opacity: 0.7;
+            }
+            
+            .header .user-info {
+                margin-right: 70px;
+            }
+        }
+        
+            @media (max-width: 768px) {
             .header {
                 flex-direction: column;
                 gap: 10px;
@@ -937,13 +1242,39 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             .firms-table td {
                 padding: 8px 5px;
             }
+            
+            .refresh-bottom {
+                top: 60px;
+                right: 10px;
+                z-index: 1;
+                transform: scale(0.75);
+                opacity: 0.6;
+            }
+            
+            .refresh-bottom:hover {
+                opacity: 1;
+                transform: scale(0.8);
+            }
+            
+            .header .user-info {
+                margin-right: 60px;
+            }
+            
+            .btn-yearly-summary {
+                min-width: 300px;
+                max-width: 90%;
+                padding: 20px 30px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Konya Belediyesi - Borç Takip Sistemi</h1>
+            <div class="header-left">
+                <div class="header-logo"></div>
+                <h1>Konya Belediyesi - Borç Takip Sistemi</h1>
+            </div>
             <div class="user-info">
                 <a href="dashboard.php">🏠 Anasayfa</a>
                 <?php echo htmlspecialchars($_SESSION['username']); ?> - <?php echo strtoupper($_SESSION['role']); ?>
@@ -951,13 +1282,19 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             </div>
         </div>
         
-        <div class="action-bar">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Firma adı veya şehir ile ara..." onkeyup="filterTable()">
-            </div>
-            <div class="btn-group">
-                <button class="btn btn-success" onclick="showAddFirmaModal()">➕ Yeni Firma</button>
-                <button class="btn btn-warning" onclick="window.location.reload()">🔄 Sayfa Yenile</button>
+        <!-- Yıllık Borç Özeti Büyük Butonu -->
+        <div style="padding: 30px; background: rgba(255,255,255,0.7); border-bottom: 1px solid rgba(0,0,0,0.1);">
+            <div style="text-align: center;">
+                <button class="btn-yearly-summary" onclick="showYearlyModal()">
+                    <div class="yearly-btn-content">
+                        <div class="yearly-btn-icon">📅</div>
+                        <div class="yearly-btn-text">
+                            <span class="yearly-btn-title">Yıllık Borç Özeti</span>
+                            <span class="yearly-btn-subtitle">Detaylı yıllık raporlama</span>
+                        </div>
+                        <div class="yearly-btn-arrow">→</div>
+                    </div>
+                </button>
             </div>
         </div>
         
@@ -984,7 +1321,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                     <p>Gecikme Var</p>
                 </div>
                 
-                <!-- Ortalama Kartları - YENİ EKLENEN -->
+                <!-- Ortalama Kartları -->
                 <div class="stat-card average">
                     <h3>₺<?php echo number_format($istatistik['ortalama_aylik_odeme'], 0, ',', '.'); ?></h3>
                     <p>Aylık Ödeme Ortalaması</p>
@@ -994,24 +1331,6 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                     <p>Kalan Borç Ortalaması</p>
                 </div>
             </div>
-            
-            <!-- Yıllık Özet - YENİ EKLENEN -->
-            <?php if (!empty($yearly_breakdown)): ?>
-            <div class="yearly-summary">
-                <h4>📅 Yıllık Borç Özeti</h4>
-                <div class="year-grid">
-                    <?php foreach ($yearly_breakdown as $year => $data): ?>
-                    <div class="year-card">
-                        <h5><?php echo $year; ?> Yılı</h5>
-                        <p><strong>Toplam:</strong> ₺<?php echo number_format($data['toplam'], 0, ',', '.'); ?></p>
-                        <p><strong>Kalan:</strong> ₺<?php echo number_format($data['kalan'], 0, ',', '.'); ?></p>
-                        <p><strong>Ödenen:</strong> ₺<?php echo number_format($data['odenen'], 0, ',', '.'); ?></p>
-                        <p><strong>Aylık Ort:</strong> ₺<?php echo number_format($data['aylik_ortalama'], 0, ',', '.'); ?></p>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
         </div>
         
         <div class="content">
@@ -1022,6 +1341,16 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             <?php if ($error_message): ?>
                 <div class="message error"><?php echo $error_message; ?></div>
             <?php endif; ?>
+            
+            <!-- Firma Arama ve Yeni Firma Butonları - Sadece Tablo Üstünde -->
+            <div style="background: rgba(255,255,255,0.8); padding: 20px; margin-bottom: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="🔍 Firma adı veya şehir ile ara..." onkeyup="filterTable()">
+                    </div>
+                    <button class="btn btn-success" onclick="showAddFirmaModal()">➕ Yeni Firma</button>
+                </div>
+            </div>
             
             <div class="table-container">
                 <div class="table-header">
@@ -1090,10 +1419,10 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                                     </span>
                                 </td>
                                 <td>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center; position: relative; z-index: 1;">
                                         <a href="firma_detay.php?id=<?php echo $firma['id']; ?>" class="btn btn-primary">📋 Detay</a>
                                         <button class="btn btn-warning" onclick="showEditFirmaModal(<?php echo $firma['id']; ?>, '<?php echo htmlspecialchars($firma['firma_adi']); ?>', '<?php echo htmlspecialchars($firma['sehir']); ?>', '<?php echo htmlspecialchars($firma['telefon']); ?>', <?php echo $firma['toplam_borc']; ?>, <?php echo $firma['aylik_odeme']; ?>, '<?php echo $firma['baslangic_tarihi']; ?>')">✏️ Düzenle</button>
-                                        <button class="btn btn-info" onclick="showTaksitModal(<?php echo $firma['id']; ?>)">📅 Taksitler</button>
+                                        <button class="btn btn-info" onclick="showTaksitModal(<?php echo $firma['id']; ?>, '<?php echo htmlspecialchars($firma['firma_adi']); ?>')">📅 Taksitler</button>
                                         <button class="btn btn-danger" onclick="confirmDelete(<?php echo $firma['id']; ?>, '<?php echo htmlspecialchars($firma['firma_adi']); ?>')">🗑️ Sil</button>
                                     </div>
                                 </td>
@@ -1103,6 +1432,37 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                     </table>
                 <?php endif; ?>
             </div>
+        </div>
+    </div>
+
+    <!-- Sayfa Yenile Butonu (En Alt Sağ Köşe) -->
+    <button class="btn btn-warning refresh-bottom" onclick="refreshAndScrollTop()" title="Sayfa Yenile">🔄 Sayfa Yenile</button>
+
+    <!-- Yıllık Özet Modalı -->
+    <div id="yearlyModal" class="yearly-summary-modal">
+        <div class="yearly-summary-modal-content">
+            <span class="close" onclick="closeYearlyModal()">&times;</span>
+            <?php if (!empty($yearly_breakdown)): ?>
+            <div class="yearly-summary">
+                <h4>📅 Yıllık Borç Özeti</h4>
+                <div class="year-grid">
+                    <?php foreach ($yearly_breakdown as $year => $data): ?>
+                    <div class="year-card">
+                        <h5><?php echo $year; ?> Yılı</h5>
+                        <p><strong>Toplam:</strong> ₺<?php echo number_format($data['toplam'], 0, ',', '.'); ?></p>
+                        <p><strong>Kalan:</strong> ₺<?php echo number_format($data['kalan'], 0, ',', '.'); ?></p>
+                        <p><strong>Ödenen:</strong> ₺<?php echo number_format($data['odenen'], 0, ',', '.'); ?></p>
+                        <p><strong>Aylık Ort:</strong> ₺<?php echo number_format($data['aylik_ortalama'], 0, ',', '.'); ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="empty-state">
+                <h3>📅 Yıllık Veri Bulunamadı</h3>
+                <p>Henüz yıllık borç verisi bulunmamaktadır.</p>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -1144,7 +1504,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         </div>
     </div>
 
-    <!-- Firma Düzenleme Modalı - YENİ EKLENEN -->
+    <!-- Firma Düzenleme Modalı -->
     <div id="editFirmaModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('editFirmaModal')">&times;</span>
@@ -1183,59 +1543,12 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         </div>
     </div>
 
-    <!-- Ödeme Modalı - YENİ EKLENEN -->
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('paymentModal')">&times;</span>
-            <h2>💰 Ödeme Yap</h2>
-            <div id="paymentInfo"></div>
-            <form method="POST">
-                <input type="hidden" name="firma_id" id="payment_firma_id">
-                <div class="form-group">
-                    <label>Ödeme Tutarı (₺):</label>
-                    <input type="number" name="odeme_tutari" id="payment_amount" required min="1" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Ödeme Tarihi:</label>
-                    <input type="date" name="odeme_tarihi" id="payment_date" required>
-                </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('paymentModal')">İptal</button>
-                    <button type="submit" name="add_payment" class="btn btn-success">💾 Ödeme Kaydet</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Taksit Modalı - YENİ EKLENEN -->
+    <!-- Taksit Modalı -->
     <div id="taksitModal" class="modal">
-        <div class="modal-content" style="max-width: 1000px; max-height: 90vh; overflow-y: auto;">
+        <div class="taksit-modal-content">
             <span class="close" onclick="closeModal('taksitModal')">&times;</span>
             <h2>📅 Taksit Takvimi</h2>
-            <div id="taksitContent" style="max-height: 70vh; overflow-y: auto;"></div>
-        </div>
-    </div>
-
-    <!-- Taksit Düzenleme Modalı - YENİ EKLENEN -->
-    <div id="editTaksitModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('editTaksitModal')">&times;</span>
-            <h2>✏️ Ödenen Taksit Düzenle</h2>
-            <form method="POST">
-                <input type="hidden" name="taksit_id" id="edit_taksit_id">
-                <div class="form-group">
-                    <label>Yeni Tutar (₺):</label>
-                    <input type="number" name="yeni_tutar" id="edit_taksit_tutar" required min="1" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Ödeme Tarihi:</label>
-                    <input type="date" name="yeni_tarih" id="edit_taksit_tarih" required>
-                </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('editTaksitModal')">İptal</button>
-                    <button type="submit" name="update_taksit" class="btn btn-success">💾 Güncelle</button>
-                </div>
-            </form>
+            <div id="taksitContent"></div>
         </div>
     </div>
 
@@ -1243,11 +1556,6 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
     <form id="deleteForm" method="POST" style="display: none;">
         <input type="hidden" name="firma_id" id="delete_firma_id">
         <input type="hidden" name="delete_firma" value="1">
-    </form>
-
-    <form id="deleteTaksitForm" method="POST" style="display: none;">
-        <input type="hidden" name="taksit_id" id="delete_taksit_id">
-        <input type="hidden" name="delete_taksit" value="1">
     </form>
 
     <script>
@@ -1276,44 +1584,22 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             document.getElementById('addFirmaModal').style.display = 'block';
         }
 
-        // YENİ EKLENEN - Ödeme modalı gösterme
-        function showPaymentModal(firmaId, firmaAdi, kalanBorc) {
-            document.getElementById('payment_firma_id').value = firmaId;
-            document.getElementById('payment_amount').max = kalanBorc;
-            document.getElementById('payment_date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('paymentInfo').innerHTML = `
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <strong>Firma:</strong> ${firmaAdi}<br>
-                    <strong>Kalan Borç:</strong> ₺${kalanBorc.toLocaleString()}
-                </div>
-            `;
-            document.getElementById('paymentModal').style.display = 'block';
+        function showYearlyModal() {
+            document.getElementById('yearlyModal').style.display = 'block';
         }
 
-        // YENİ EKLENEN - Taksit takvimi modalı (AJAX olmadan)
-        function showTaksitModal(firmaId) {
-            // PHP ile taksit bilgilerini al
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', '', true);
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    try {
-                        // Taksit verilerini simüle et (gerçek uygulamada veritabanından gelecek)
-                        generateTaksitTable(firmaId);
-                    } catch (error) {
-                        alert('Taksit bilgileri yüklenirken hata oluştu!');
-                    }
-                }
-            };
-            
-            // Basit bir yaklaşım - direkt tablo oluştur
-            generateTaksitTable(firmaId);
+        function closeYearlyModal() {
+            document.getElementById('yearlyModal').style.display = 'none';
         }
 
-        function generateTaksitTable(firmaId) {
-            // Firma bilgilerini tablodan al
+        function refreshAndScrollTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        }
+
+        function showTaksitModal(firmaId, firmaAdi) {
             const rows = document.querySelectorAll('#firmsTableBody tr');
             let firmaData = null;
             
@@ -1322,6 +1608,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 if (detayBtn) {
                     const cells = row.cells;
                     firmaData = {
+                        firmaAdi: firmaAdi,
                         toplamBorc: parseFloat(cells[4].textContent.replace(/[₺,.]/g, '')),
                         odenenTutar: parseFloat(cells[5].textContent.replace(/[₺,.]/g, '')),
                         kalanBorc: parseFloat(cells[6].textContent.replace(/[₺,.]/g, '')),
@@ -1338,13 +1625,17 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             }
             
             let html = `
-                <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
-                    <strong>Toplam Taksit:</strong> ${firmaData.taksitSayisi} |
-                    <strong>Aylık Ödeme:</strong> ₺${firmaData.aylikOdeme.toLocaleString()} |
-                    <strong>Kalan Borç:</strong> ₺${firmaData.kalanBorc.toLocaleString()}
+                <div style="margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-radius: 12px; border-left: 5px solid #2196f3;">
+                    <h3 style="margin-bottom: 15px; color: #1976d2; font-size: 18px;">📋 ${firmaData.firmaAdi} - Taksit Bilgileri</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div><strong>Toplam Taksit:</strong> ${firmaData.taksitSayisi}</div>
+                        <div><strong>Aylık Ödeme:</strong> ₺${firmaData.aylikOdeme.toLocaleString()}</div>
+                        <div><strong>Kalan Borç:</strong> ₺${firmaData.kalanBorc.toLocaleString()}</div>
+                        <div><strong>Ödenen:</strong> ₺${firmaData.odenenTutar.toLocaleString()}</div>
+                    </div>
                 </div>
                 <div style="overflow-x: auto;">
-                <table class="firms-table" style="width: 100%; min-width: 700px;">
+                <table class="taksit-table">
                     <thead>
                         <tr>
                             <th>Taksit No</th>
@@ -1353,7 +1644,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                             <th>Gecikme Faizi</th>
                             <th>Toplam Tutar</th>
                             <th>Durum</th>
-                            <th>Ödeme Geçmişi</th>
+                            <th>Ödeme Tarihi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1364,7 +1655,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             const baslangicDate = new Date(year, month - 1, day);
             const today = new Date();
             
-            // Ödenen taksit sayısını hesapla (kalan borç ile)
+            // Ödenen taksit sayısını hesapla
             const toplamOdenen = firmaData.toplamBorc - firmaData.kalanBorc;
             const odenenTaksitSayisi = Math.floor(toplamOdenen / firmaData.aylikOdeme);
             
@@ -1373,44 +1664,56 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 taksitDate.setDate(taksitDate.getDate() + ((i - 1) * 30)); // Her ay 30 gün
                 
                 const gecikmeDate = new Date(taksitDate);
-                gecikmeDate.setDate(gecikmeDate.getDate() + 15); // 15 gün gecikme
+                gecikmeDate.setDate(gecikmeDate.getDate() + 15); // 15 gün gecikme süresi
                 
                 let durum = '';
                 let durumClass = '';
+                let durumStyle = '';
                 let odemeGecmisi = '-';
                 let asilTutar = firmaData.aylikOdeme;
                 let gecikmeFaizi = 0;
                 let toplamTutar = asilTutar;
                 
+                // Son taksitin tutarını düzelt
+                if (i === firmaData.taksitSayisi) {
+                    asilTutar = firmaData.toplamBorc - ((firmaData.taksitSayisi - 1) * firmaData.aylikOdeme);
+                    toplamTutar = asilTutar;
+                }
+                
                 if (i <= odenenTaksitSayisi) {
-                    durum = 'ÖDENDİ';
+                    durum = 'ÖDENDİ ✅';
                     durumClass = 'status-badge status-tamamlandi';
-                    odemeGecmisi = `₺${asilTutar.toLocaleString()}<br><small>${taksitDate.toLocaleDateString('tr-TR')}</small>`;
+                    durumStyle = 'background: linear-gradient(135deg, #4caf50, #45a049); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
+                    odemeGecmisi = taksitDate.toLocaleDateString('tr-TR');
                 } else if (firmaData.kalanBorc <= 0) {
-                    durum = 'TAMAMLANDI';
+                    durum = 'TAMAMLANDI ✅';
                     durumClass = 'status-badge status-tamamlandi';
+                    durumStyle = 'background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 } else if (today > gecikmeDate) {
-                    durum = 'GECİKME';
+                    durum = 'GECİKME ⚠️';
                     durumClass = 'status-badge status-gecikme';
+                    durumStyle = 'background: linear-gradient(135deg, #ff5722, #d32f2f); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                     gecikmeFaizi = asilTutar * 0.02; // %2 faiz
                     toplamTutar = asilTutar + gecikmeFaizi;
                 } else if (today > taksitDate) {
-                    durum = 'VADESİ GEÇTİ';
+                    durum = 'VADESİ GEÇTİ ⏰';
                     durumClass = 'status-badge status-gecikme';
+                    durumStyle = 'background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 } else {
-                    durum = 'BEKLİYOR';
+                    durum = 'BEKLİYOR ⏳';
                     durumClass = 'status-badge status-aktif';
+                    durumStyle = 'background: linear-gradient(135deg, #607d8b, #455a64); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 }
                 
                 html += `
-                    <tr>
-                        <td><strong>${i}</strong></td>
-                        <td>${taksitDate.toLocaleDateString('tr-TR')}</td>
-                        <td style="color: #2c3e50;">₺${asilTutar.toLocaleString()}</td>
-                        <td style="color: #e74c3c;">${gecikmeFaizi > 0 ? '₺' + gecikmeFaizi.toLocaleString() : '-'}</td>
-                        <td style="color: #27ae60; font-weight: bold;">₺${toplamTutar.toLocaleString()}</td>
-                        <td><span class="${durumClass}">${durum}</span></td>
-                        <td style="font-size: 12px;">${odemeGecmisi}</td>
+                    <tr style="transition: all 0.3s ease;">
+                        <td style="font-weight: bold; color: #1976d2;">${i}</td>
+                        <td style="font-weight: 600;">${taksitDate.toLocaleDateString('tr-TR')}</td>
+                        <td style="color: #2e7d32; font-weight: 600;">₺${asilTutar.toLocaleString()}</td>
+                        <td style="color: #d32f2f; font-weight: 600;">${gecikmeFaizi > 0 ? '₺' + gecikmeFaizi.toLocaleString() : '-'}</td>
+                        <td style="color: #1976d2; font-weight: bold; font-size: 14px;">₺${toplamTutar.toLocaleString()}</td>
+                        <td><span style="${durumStyle}">${durum}</span></td>
+                        <td style="font-size: 12px; color: #666;">${odemeGecmisi}</td>
                     </tr>
                 `;
             }
@@ -1420,65 +1723,6 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             document.getElementById('taksitModal').style.display = 'block';
         }
 
-        // YENİ EKLENEN - Hızlı ödeme fonksiyonu
-        function quickPayment(taksitNo, tutar) {
-            if (confirm(`${taksitNo}. taksiti ödemek istediğinizden emin misiniz?\nTutar: ₺${tutar.toLocaleString()}`)) {
-                // Burada AJAX ile ödeme yapılabilir
-                alert('Ödeme işlemi başarılı! Sayfa yenilenecek.');
-                window.location.reload();
-            }
-        }
-
-        // YENİ EKLENEN - Ödeme düzenleme
-        function editOdeme(taksitNo, tutar, tarih) {
-            const yeniTutar = prompt(`${taksitNo}. taksit tutarını düzenleyin:`, tutar);
-            const yeniTarih = prompt(`${taksitNo}. taksit ödeme tarihini düzenleyin (YYYY-MM-DD):`, tarih);
-            
-            if (yeniTutar && yeniTarih) {
-                alert('Ödeme düzenleme başarılı! Sayfa yenilenecek.');
-                window.location.reload();
-            }
-        }
-
-        // YENİ EKLENEN - Ödeme silme
-        function deleteOdeme(taksitNo) {
-            if (confirm(`${taksitNo}. taksit ödemesini silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz!`)) {
-                alert('Ödeme silme başarılı! Sayfa yenilenecek.');
-                window.location.reload();
-            }
-        }
-
-        // YENİ EKLENEN - Taksit silme
-        function deleteTaksit(taksitNo) {
-            if (confirm(`${taksitNo}. taksiti tamamen silmek istediğinizden emin misiniz?`)) {
-                alert('Taksit silme başarılı! Sayfa yenilenecek.');
-                window.location.reload();
-            }
-        }
-
-        // Tarih formatlama fonksiyonu
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR');
-        }
-
-        // Modal dışına tıklandığında kapat
-        window.onclick = function(event) {
-            if (event.target.classList && event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        };
-
-        // Sayfa yüklendiğinde bugünün tarihini varsayılan olarak ayarla
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().split('T')[0];
-            const dateInputs = document.querySelectorAll('input[type="date"]');
-            dateInputs.forEach(input => {
-                if (!input.value) {
-                    input.value = today;
-                }
-            });
-        });
         function showEditFirmaModal(id, nama, sehir, telefon, toplam_borc, aylik_odeme, baslangic_tarihi) {
             document.getElementById('edit_firma_id').value = id;
             document.getElementById('edit_firma_adi').value = nama;
@@ -1501,16 +1745,29 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // Modal dışına tıklandığında kapat
+        function capitalizeFirstLetter(input) {
+            let value = input.value;
+            if (value.length > 0) {
+                input.value = value.charAt(0).toUpperCase() + value.slice(1);
+            }
+        }
+
+        // Modal kapatma - ESC tuşu ve X butonu
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                // Tüm açık modalları kapat
+                const modals = document.querySelectorAll('.modal, .yearly-summary-modal');
+                modals.forEach(modal => {
+                    if (modal.style.display === 'block') {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        // Modal dışına tıklamayı engelle (sadece X ve ESC ile kapansın)
         window.onclick = function(event) {
-            const addModal = document.getElementById('addFirmaModal');
-            const editModal = document.getElementById('editFirmaModal');
-            if (event.target === addModal) {
-                addModal.style.display = 'none';
-            }
-            if (event.target === editModal) {
-                editModal.style.display = 'none';
-            }
+            // Modal dışına tıklama ile kapanmayacak - sadece X ve ESC tuşu ile
         }
 
         // Sayfa yüklendiğinde bugünün tarihini varsayılan olarak ayarla
