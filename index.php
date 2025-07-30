@@ -64,19 +64,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         :root {
-            --primary-color: #1a365d;
-            --secondary-color: #2d5a87;
+            --primary-color: #2c5282;
+            --secondary-color: #3182ce;
             --accent-color: #e53e3e;
             --success-color: #38a169;
             --warning-color: #dd6b20;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: linear-gradient(135deg, #4facfe 0%, #1243b3ff -50%, #667eea 70%, #764ba2 100%);
             --card-bg: rgba(255, 255, 255, 0.95);
             --text-primary: #2d3748;
             --text-secondary: #4a5568;
             --border-color: #e2e8f0;
-            --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.07);
-            --shadow-medium: 0 10px 25px rgba(0, 0, 0, 0.15);
-            --shadow-heavy: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --input-bg: #ffffff;
+            --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --shadow-heavy: 0 16px 48px rgba(0, 0, 0, 0.15);
         }
 
         body {
@@ -91,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             overflow-x: hidden;
         }
 
-        /* Animated Background Elements */
+        /* Güzel çizgiler ve desenler */
         body::before {
             content: '';
             position: absolute;
@@ -99,11 +100,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M 8 0 L 0 0 0 8" fill="none" stroke="%23ffffff" stroke-width="0.5" opacity="0.08"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="beautifulLines" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M0 25 Q12.5 12.5 25 25 T50 25" stroke="%23ffffff" stroke-width="0.5" fill="none" opacity="0.1"/><path d="M25 0 Q37.5 12.5 50 25 T100 25" stroke="%23ffffff" stroke-width="0.3" fill="none" opacity="0.08"/><circle cx="25" cy="25" r="2" fill="%23ffffff" opacity="0.06"/><circle cx="12.5" cy="12.5" r="1" fill="%23ffffff" opacity="0.08"/><circle cx="37.5" cy="37.5" r="1.5" fill="%23ffffff" opacity="0.05"/><path d="M10 10 L15 15 M35 10 L40 15 M10 40 L15 35 M35 40 L40 35" stroke="%23ffffff" stroke-width="0.8" opacity="0.07"/></pattern></defs><rect width="100" height="100" fill="url(%23beautifulLines)"/></svg>');
             pointer-events: none;
         }
 
-        .floating-elements {
+        .geometric-elements {
             position: absolute;
             top: 0;
             left: 0;
@@ -114,82 +115,86 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             z-index: 0;
         }
 
-        .floating-element {
+        .geometric-shape {
             position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: floatAnimation 15s infinite ease-in-out;
+            background: rgba(255, 255, 255, 0.08);
+            animation: floatGeometric 20s infinite ease-in-out;
         }
 
-        .floating-element:nth-child(1) {
-            width: 100px;
-            height: 100px;
-            top: 10%;
-            left: 15%;
-            animation-delay: 0s;
-        }
-
-        .floating-element:nth-child(2) {
+        .geometric-shape:nth-child(1) {
             width: 150px;
             height: 150px;
-            top: 70%;
-            right: 10%;
-            animation-delay: -5s;
+            top: 10%;
+            left: 8%;
+            border-radius: 20px;
+            transform: rotate(45deg);
+            animation-delay: 0s;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
         }
 
-        .floating-element:nth-child(3) {
-            width: 80px;
-            height: 80px;
+        .geometric-shape:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            top: 65%;
+            right: 12%;
+            border-radius: 50%;
+            animation-delay: -8s;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+        }
+
+        .geometric-shape:nth-child(3) {
+            width: 120px;
+            height: 120px;
             bottom: 20%;
             left: 70%;
-            animation-delay: -10s;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            animation-delay: -15s;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.12));
         }
 
-        .floating-element:nth-child(4) {
-            width: 60px;
-            height: 60px;
-            top: 40%;
-            right: 20%;
-            animation-delay: -7s;
+        .geometric-shape:nth-child(4) {
+            width: 80px;
+            height: 80px;
+            top: 35%;
+            right: 25%;
+            border-radius: 15px;
+            animation-delay: -5s;
+            background: linear-gradient(225deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
         }
 
-        @keyframes floatAnimation {
+        @keyframes floatGeometric {
             0%, 100% { 
                 transform: translateY(0px) translateX(0px) rotate(0deg); 
-                opacity: 0.1;
+                opacity: 0.08;
             }
-            25% { 
-                transform: translateY(-30px) translateX(15px) rotate(90deg); 
-                opacity: 0.2;
+            33% { 
+                transform: translateY(-20px) translateX(10px) rotate(120deg); 
+                opacity: 0.12;
             }
-            50% { 
-                transform: translateY(-20px) translateX(-10px) rotate(180deg); 
-                opacity: 0.15;
-            }
-            75% { 
-                transform: translateY(10px) translateX(20px) rotate(270deg); 
-                opacity: 0.25;
+            66% { 
+                transform: translateY(10px) translateX(-15px) rotate(240deg); 
+                opacity: 0.06;
             }
         }
 
         .login-container {
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
             box-shadow: var(--shadow-heavy);
             padding: 3rem;
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
             position: relative;
             z-index: 1;
-            animation: slideUpScale 0.8s cubic-bezier(0.23, 1, 0.320, 1);
+            animation: slideUpFade 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
-        @keyframes slideUpScale {
+        @keyframes slideUpFade {
             from {
                 opacity: 0;
-                transform: translateY(60px) scale(0.9);
+                transform: translateY(40px) scale(0.95);
             }
             to {
                 opacity: 1;
@@ -208,30 +213,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom: 1.5rem;
         }
 
-        .logo-container::before {
-            content: '';
-            position: absolute;
-            top: -12px;
-            left: -12px;
-            right: -12px;
-            bottom: -12px;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            border-radius: 50%;
-            opacity: 0.1;
-            animation: pulseLogo 3s infinite;
-        }
-
-        @keyframes pulseLogo {
-            0%, 100% { transform: scale(1); opacity: 0.1; }
-            50% { transform: scale(1.05); opacity: 0.2; }
-        }
-
         .logo-img {
             width: 85px;
             height: 85px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid white;
+            border: 3px solid white;
             box-shadow: var(--shadow-medium);
             position: relative;
             z-index: 1;
@@ -249,7 +236,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: var(--text-secondary);
             font-size: 1rem;
             font-weight: 500;
-            opacity: 0.8;
+            opacity: 0.85;
         }
 
         .message {
@@ -261,30 +248,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            animation: slideInLeft 0.5s ease-out;
+            animation: fadeInDown 0.6s ease-out;
         }
 
-        @keyframes slideInLeft {
+        @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateX(-20px);
+                transform: translateY(-15px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
         .message.error {
-            background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
             color: var(--accent-color);
-            border: 1px solid #fbb6ce;
+            border: 1px solid #fecaca;
         }
 
         .message.success {
-            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+            background: linear-gradient(135deg, #f0fff4 0%, #dcfce7 100%);
             color: var(--success-color);
-            border: 1px solid #9ae6b4;
+            border: 1px solid #bbf7d0;
         }
 
         .form-group {
@@ -306,25 +293,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .form-group input {
             width: 100%;
             padding: 1rem 1.25rem;
-            border: 2px solid var(--border-color);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             font-size: 1rem;
             font-family: inherit;
-            background: white;
-            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            background: var(--input-bg);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
             position: relative;
+            outline: none;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: var(--secondary-color);
-            box-shadow: 0 0 0 3px rgba(45, 90, 135, 0.1);
-            transform: translateY(-2px);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.08);
+            background: #ffffff;
         }
 
         .form-group input:hover {
-            border-color: #cbd5e0;
-            transform: translateY(-1px);
+            border-color: #c1c9d0;
+            background: #ffffff;
         }
 
         .login-btn {
@@ -338,7 +326,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
             margin-bottom: 1.5rem;
@@ -351,8 +339,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.6s;
         }
 
         .login-btn:hover::before {
@@ -360,8 +348,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(45, 90, 135, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(44, 82, 130, 0.25);
         }
 
         .login-btn:active {
@@ -385,29 +373,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            color: var(--secondary-color);
+            color: var(--primary-color);
             text-decoration: none;
             font-size: 0.875rem;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
-            border-radius: 20px;
-            background: rgba(45, 90, 135, 0.05);
-            transition: all 0.3s ease;
+            border-radius: 18px;
+            background: rgba(44, 82, 130, 0.04);
+            transition: all 0.25s ease;
             border: 1px solid transparent;
         }
 
         .link:hover {
-            background: rgba(45, 90, 135, 0.1);
+            background: rgba(44, 82, 130, 0.08);
             transform: translateY(-1px);
-            border-color: rgba(45, 90, 135, 0.2);
+            border-color: rgba(44, 82, 130, 0.15);
         }
 
         .test-accounts {
             margin-top: 2rem;
             padding: 1.5rem;
-            background: rgba(45, 90, 135, 0.03);
+            background: rgba(44, 82, 130, 0.02);
             border-radius: 12px;
-            border: 1px solid rgba(45, 90, 135, 0.1);
+            border: 1px solid rgba(44, 82, 130, 0.08);
         }
 
         .test-accounts h3 {
@@ -440,11 +428,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .account-info code {
-            background: rgba(45, 90, 135, 0.1);
+            background: rgba(44, 82, 130, 0.08);
             padding: 0.25rem 0.5rem;
             border-radius: 6px;
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            color: var(--secondary-color);
+            color: var(--primary-color);
             font-weight: 600;
             font-size: 0.75rem;
         }
@@ -478,7 +466,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .login-container {
                 padding: 2rem 1.5rem;
                 margin: 1rem;
-                border-radius: 20px;
+                border-radius: 18px;
             }
             
             .login-header h1 {
@@ -504,22 +492,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         /* Enhanced accessibility */
         .form-group input:focus-visible {
-            outline: 2px solid var(--secondary-color);
-            outline-offset: 2px;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px var(--primary-color);
         }
 
         .login-btn:focus-visible {
-            outline: 2px solid var(--secondary-color);
+            outline: 2px solid var(--primary-color);
             outline-offset: 2px;
         }
     </style>
 </head>
 <body>
-    <div class="floating-elements">
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
-        <div class="floating-element"></div>
+    <div class="geometric-elements">
+        <div class="geometric-shape"></div>
+        <div class="geometric-shape"></div>
+        <div class="geometric-shape"></div>
+        <div class="geometric-shape"></div>
     </div>
 
     <div class="login-container">
@@ -664,7 +652,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         });
 
         // Güvenlik bildirimi
-        console.log('%cKonya Büyükşehir Belediyesi - Güvenlik Uyarısı', 'color: #1a365d; font-size: 18px; font-weight: bold;');
+        console.log('%cKonya Büyükşehir Belediyesi - Güvenlik Uyarısı', 'color: #2c5282; font-size: 18px; font-weight: bold;');
         console.log('%cBu konsola kod yapıştırmayınız! Hesabınızın güvenliği için önemlidir.', 'color: #e53e3e; font-size: 14px;');
     </script>
 </body>
