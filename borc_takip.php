@@ -48,6 +48,7 @@ if (isset($_POST['update_taksit'])) {
         $error_message = "Taksit güncellenirken hata oluştu: " . $e->getMessage();
     }
 }
+
 if (isset($_POST['update_firma'])) {
     $firma_id = $_POST['firma_id'];
     $firma_adi = $_POST['firma_adi'];
@@ -162,6 +163,7 @@ if (isset($_POST['delete_firma'])) {
 if (isset($_POST['add_payment'])) {
     $firma_id = $_POST['firma_id'];
     $odeme_tutari = $_POST['odeme_tutari'];
+    $odeme_tarihi = $_POST['odeme_tarihi'] ?? date('Y-m-d');
     
     try {
         $pdo->beginTransaction();
@@ -184,12 +186,12 @@ if (isset($_POST['add_payment'])) {
             ");
             $update_stmt->execute([$yeni_kalan, $durum, $yeni_aylik_odeme, $firma_id]);
             
-            // En eski ödenmemiş taksiti güncelle
+            // En eski ödenmemiş taksiti güncelle - vade_tarihi ile sırala
             $taksit_update = $pdo->prepare("
                 UPDATE taksitler 
                 SET durum = 'odendi', odeme_tarihi = ?, tutar = ?
                 WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme') 
-                ORDER BY taksit_no ASC 
+                ORDER BY vade_tarihi ASC 
                 LIMIT 1
             ");
             $taksit_update->execute([$odeme_tarihi, $odeme_tutari, $firma_id]);
@@ -260,7 +262,7 @@ try {
     ];
 }
 
-// Otomatik taksit programı oluşturma fonksiyonu - YENİ EKLENEN
+// Otomatik taksit programı oluşturma fonksiyonu - DÜZELTİLDİ
 function createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, $baslangic_tarihi) {
     $taksit_sayisi = ceil($toplam_borc / $aylik_odeme);
     $baslangic_date = new DateTime($baslangic_tarihi);
@@ -271,25 +273,23 @@ function createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, 
         
         $tutar = ($i == $taksit_sayisi) ? $toplam_borc - (($taksit_sayisi - 1) * $aylik_odeme) : $aylik_odeme;
         
-        // Gecikme kontrolü (15 gün sonra %2 faiz)
+        // Gecikme kontrolü (15 gün sonra)
         $today = new DateTime();
         $gecikme_tarihi = clone $vade_tarihi;
         $gecikme_tarihi->add(new DateInterval('P15D'));
         
         $durum = 'bekliyor';
-        $gecikme_faizi = 0;
         
         if ($today > $gecikme_tarihi) {
             $durum = 'gecikme';
-            $gecikme_faizi = $tutar * 0.02; // %2 faiz
-            $tutar += $gecikme_faizi;
         }
         
+        // taksit_no sütunu kaldırıldı - sadece mevcut sütunları kullan
         $insert_taksit = $pdo->prepare("
-            INSERT INTO taksitler (firma_id, taksit_no, tutar, vade_tarihi, durum, gecikme_faizi, orijinal_tutar) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO taksitler (firma_id, tutar, vade_tarihi, durum) 
+            VALUES (?, ?, ?, ?)
         ");
-        $insert_taksit->execute([$firma_id, $i, $tutar, $vade_tarihi->format('Y-m-d'), $durum, $gecikme_faizi, $aylik_odeme]);
+        $insert_taksit->execute([$firma_id, $tutar, $vade_tarihi->format('Y-m-d'), $durum]);
     }
 }
 
@@ -419,6 +419,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             opacity: 0.9;
         }
         
+
         .header .user-info a {
             color: white;
             text-decoration: none;
@@ -1191,7 +1192,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         
         /* Header sağ tarafına margin ekle */
         .header .user-info {
-            font-size: 14px;
+            font-size: 25px;
             opacity: 0.9;
             margin-right: 80px; /* Sayfa yenile butonu için yer aç */
         }
@@ -1276,9 +1277,9 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 <h1>Konya Belediyesi - Borç Takip Sistemi</h1>
             </div>
             <div class="user-info">
-                <a href="dashboard.php">🏠 Anasayfa</a>
                 <?php echo htmlspecialchars($_SESSION['username']); ?> - <?php echo strtoupper($_SESSION['role']); ?>
-                | 
+                <span style="margin: 0 25px;">|</span>
+                <a href="dashboard.php" style="background: linear-gradient(135deg, #0016c0ff, #0016c0ff); color: white; padding: 12px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3); transition: all 0.3s ease;">🏠 Anasayfa</a>
             </div>
         </div>
         
