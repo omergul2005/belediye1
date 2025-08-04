@@ -96,9 +96,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
             position: relative;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* Güzel çizgiler ve desenler */
@@ -131,19 +131,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .geometric-shape:nth-child(1) {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             top: 10%;
             left: 8%;
-            border-radius: 20px;
+            border-radius: 15px;
             transform: rotate(45deg);
             animation-delay: 0s;
             background: linear-gradient(45deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
         }
 
         .geometric-shape:nth-child(2) {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             top: 65%;
             right: 12%;
             border-radius: 50%;
@@ -152,8 +152,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .geometric-shape:nth-child(3) {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             bottom: 20%;
             left: 70%;
             clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
@@ -162,11 +162,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .geometric-shape:nth-child(4) {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             top: 35%;
             right: 25%;
-            border-radius: 15px;
+            border-radius: 10px;
             animation-delay: -5s;
             background: linear-gradient(225deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.05));
         }
@@ -177,11 +177,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 opacity: 0.08;
             }
             33% { 
-                transform: translateY(-20px) translateX(10px) rotate(120deg); 
+                transform: translateY(-15px) translateX(8px) rotate(120deg); 
                 opacity: 0.12;
             }
             66% { 
-                transform: translateY(10px) translateX(-15px) rotate(240deg); 
+                transform: translateY(8px) translateX(-10px) rotate(240deg); 
                 opacity: 0.06;
             }
         }
@@ -190,20 +190,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             background: var(--card-bg);
             backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
+            border-radius: 18px;
             box-shadow: var(--shadow-heavy);
-            padding: 3rem;
+            padding: 2rem;
             width: 100%;
-            max-width: 520px;
+            max-width: 460px;
             position: relative;
             z-index: 1;
             animation: slideUpFade 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            margin: auto;
+            max-height: 95vh;
+            overflow-y: auto;
         }
 
         @keyframes slideUpFade {
             from {
                 opacity: 0;
-                transform: translateY(40px) scale(0.95);
+                transform: translateY(30px) scale(0.95);
             }
             to {
                 opacity: 1;
@@ -213,20 +216,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .back-button {
             position: absolute;
-            top: 1.5rem;
-            left: 1.5rem;
+            top: 1rem;
+            left: 1rem;
             background: rgba(44, 82, 130, 0.08);
             border: 1px solid rgba(44, 82, 130, 0.15);
             border-radius: 50px;
-            padding: 0.75rem 1.25rem;
+            padding: 0.6rem 1rem;
             color: var(--primary-color);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
             transition: all 0.25s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             z-index: 2;
         }
 
@@ -239,19 +242,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .header {
             text-align: center;
-            margin-bottom: 2rem;
-            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            margin-top: 0.8rem;
         }
 
         .logo-container {
             position: relative;
             display: inline-block;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .logo-img {
-            width: 85px;
-            height: 85px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid white;
@@ -262,35 +265,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .header h1 {
             color: var(--text-primary);
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             letter-spacing: -0.025em;
+            line-height: 1.2;
         }
 
         .header p {
             color: var(--text-secondary);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 500;
             opacity: 0.85;
         }
 
         .message {
-            padding: 1rem 1.25rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.6rem;
             animation: fadeInDown 0.6s ease-out;
         }
 
         @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-15px);
+                transform: translateY(-10px);
             }
             to {
                 opacity: 1;
@@ -311,27 +315,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
             position: relative;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             color: var(--text-primary);
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .form-group input {
             width: 100%;
-            padding: 1rem 1.25rem;
+            padding: 0.9rem 1rem;
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-family: inherit;
             background: var(--input-bg);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -341,7 +345,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .form-group input:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 1px var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.08);
             background: #ffffff;
         }
 
@@ -352,13 +356,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         /* Password strength indicator */
         .password-strength {
-            margin-top: 0.5rem;
+            margin-top: 0.4rem;
             display: flex;
-            gap: 0.25rem;
+            gap: 0.2rem;
         }
 
         .strength-bar {
-            height: 3px;
+            height: 2.5px;
             background: #e2e8f0;
             border-radius: 2px;
             flex: 1;
@@ -375,19 +379,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .submit-btn {
             width: 100%;
-            padding: 1rem 1.5rem;
+            padding: 0.9rem 1.2rem;
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
             transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
-            margin-top: 1rem;
+            margin-top: 0.8rem;
         }
 
         .submit-btn::before {
@@ -407,7 +411,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .submit-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(44, 82, 130, 0.25);
+            box-shadow: 0 6px 20px rgba(44, 82, 130, 0.25);
         }
 
         .submit-btn:active {
@@ -422,27 +426,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .login-link {
             text-align: center;
-            margin-top: 2rem;
-            padding-top: 2rem;
+            margin-top: 1.2rem;
+            padding-top: 1.2rem;
             border-top: 1px solid var(--border-color);
         }
 
         .login-link p {
             color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            margin-bottom: 0.8rem;
         }
 
         .login-link a {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             color: var(--primary-color);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 18px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 15px;
             background: rgba(44, 82, 130, 0.04);
             transition: all 0.25s ease;
             border: 1px solid transparent;
@@ -455,21 +459,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .requirements {
-            margin-top: 1.5rem;
-            padding: 1.5rem;
+            margin-top: 1rem;
+            padding: 1rem;
             background: rgba(44, 82, 130, 0.02);
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(44, 82, 130, 0.08);
         }
 
         .requirements h4 {
             color: var(--text-primary);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.6rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .requirements ul {
@@ -480,11 +484,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .requirements li {
             color: var(--text-secondary);
-            font-size: 0.8125rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            margin-bottom: 0.4rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            line-height: 1.3;
         }
 
         .requirements li::before {
@@ -496,9 +501,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         /* Loading animation */
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
@@ -508,32 +513,169 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             to { transform: rotate(360deg); }
         }
 
-        /* Responsive Design */
-        @media (max-width: 640px) {
-            .container {
-                padding: 2rem 1.5rem;
-                margin: 1rem;
-                border-radius: 18px;
+        /* Laptop ve küçük ekranlar için özel responsive ayarlar */
+        @media (max-height: 800px) {
+            body {
+                padding: 8px;
             }
             
-            .header h1 {
-                font-size: 1.5rem;
+            .container {
+                padding: 1.2rem;
+                max-width: 400px;
             }
             
             .logo-img {
-                width: 70px;
-                height: 70px;
+                width: 50px;
+                height: 50px;
             }
             
-            .back-button {
-                top: 1rem;
-                left: 1rem;
-                padding: 0.5rem 1rem;
-                font-size: 0.8125rem;
+            .header h1 {
+                font-size: 1.1rem;
+            }
+            
+            .header p {
+                font-size: 0.75rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.7rem;
             }
             
             .requirements {
+                margin-top: 0.5rem;
+                padding: 0.6rem;
+            }
+            
+            .requirements li {
+                font-size: 0.65rem;
+                margin-bottom: 0.15rem;
+            }
+            
+            .login-link {
+                margin-top: 0.6rem;
+                padding-top: 0.6rem;
+            }
+        }
+
+        /* Çok küçük laptop ekranları için (13-14 inch) */
+        @media (max-height: 700px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
                 padding: 1rem;
+                max-width: 380px;
+            }
+            
+            .header {
+                margin-bottom: 0.8rem;
+                margin-top: 0.3rem;
+            }
+            
+            .logo-container {
+                margin-bottom: 0.4rem;
+            }
+            
+            .logo-img {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .header h1 {
+                font-size: 1rem;
+                margin-bottom: 0.1rem;
+            }
+            
+            .form-group {
+                margin-bottom: 0.6rem;
+            }
+            
+            .form-group input {
+                padding: 0.6rem 0.7rem;
+                font-size: 0.8rem;
+            }
+            
+            .submit-btn {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .requirements {
+                margin-top: 0.4rem;
+                padding: 0.5rem;
+            }
+            
+            .requirements h4 {
+                font-size: 0.7rem;
+                margin-bottom: 0.3rem;
+            }
+            
+            .requirements li {
+                font-size: 0.6rem;
+                margin-bottom: 0.1rem;
+            }
+            
+            .login-link {
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+            }
+            
+            .login-link p {
+                font-size: 0.7rem;
+                margin-bottom: 0.4rem;
+            }
+        }
+
+        /* Tablet ve mobil cihazlar */
+        @media (max-width: 640px) {
+            .container {
+                padding: 1.5rem;
+                margin: 0.5rem;
+                border-radius: 15px;
+                max-width: calc(100vw - 1rem);
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .logo-img {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .back-button {
+                top: 0.8rem;
+                left: 0.8rem;
+                padding: 0.5rem 0.8rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Çok küçük mobil ekranlar */
+        @media (max-width: 480px) and (max-height: 700px) {
+            body {
+                padding: 2px;
+                padding-top: 10px;
+            }
+            
+            .container {
+                padding: 1rem;
+                margin: 0.25rem;
+                max-height: calc(100vh - 20px);
+            }
+            
+            .geometric-elements {
+                display: none;
+            }
+            
+            .requirements {
+                padding: 0.8rem;
+            }
+            
+            .requirements li {
+                font-size: 0.7rem;
             }
         }
 
