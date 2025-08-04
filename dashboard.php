@@ -160,10 +160,10 @@ if ($_SESSION['role'] == 'admin') {
         }
         
         .logo-img {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            margin-bottom: 10px;
+            width: 200px;
+            height: 100px;
+            border-radius: 0%;
+            margin-bottom: 0px;
         }
         
         .welcome-section {
@@ -502,10 +502,9 @@ if ($_SESSION['role'] == 'admin') {
     <div class="dashboard-container">
         <div class="dashboard-header">
             <div class="logo">
-                <img src="konya-logo.png" alt="<?php echo SITE_NAME; ?>" class="logo-img">
+                <img src="konya-logo1.png" alt="<?php echo SITE_NAME; ?>" class="logo-img">
             </div>
-            <h1><?php echo SITE_NAME; ?></h1>
-            <h2>Yönetim Paneli</h2>
+            
         </div>
         
         <div class="welcome-section">

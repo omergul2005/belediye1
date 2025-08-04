@@ -21,7 +21,7 @@ $firma_id = (int)$_GET['id'];
 $success_message = '';
 $error_message = '';
 
-// Ödeme ekleme işlemi
+// DÜZELTME: Ödeme ekleme işlemi - KÜSURAT ÇÖZÜMLÜ
 if (isset($_POST['add_payment'])) {
     $odeme_tutari = (float)$_POST['odeme_tutari'];
     
@@ -33,35 +33,104 @@ if (isset($_POST['add_payment'])) {
         $firma_stmt->execute([$firma_id]);
         $firma = $firma_stmt->fetch();
         
-        // Aylık ödeme miktarına eşit olmalı
-        if ($firma && $odeme_tutari == $firma['aylik_odeme'] && $odeme_tutari <= $firma['kalan_borc'] && $odeme_tutari > 0) {
-            // Kalan borcu güncelle
-            $yeni_kalan = $firma['kalan_borc'] - $odeme_tutari;
-            $durum = ($yeni_kalan <= 0) ? 'tamamlandi' : 'aktif';
+        if ($firma && $odeme_tutari > 0 && $odeme_tutari <= $firma['kalan_borc']) {
             
-            $update_stmt = $pdo->prepare("
-                UPDATE firmalar 
-                SET kalan_borc = ?, durum = ? 
-                WHERE id = ?
-            ");
-            $update_stmt->execute([$yeni_kalan, $durum, $firma_id]);
+            // Ödenen taksit sayısını hesapla
+            $odenen_taksit_stmt = $pdo->prepare("SELECT COUNT(*) as odenen_sayisi FROM taksitler WHERE firma_id = ? AND durum = 'odendi'");
+            $odenen_taksit_stmt->execute([$firma_id]);
+            $odenen_taksit_sayisi = $odenen_taksit_stmt->fetch()['odenen_sayisi'];
             
-            // Ödeme kaydını taksitler tablosuna ekle
-            $taksit_stmt = $pdo->prepare("
-                INSERT INTO taksitler (firma_id, tutar, vade_tarihi, durum, odeme_tarihi) 
-                VALUES (?, ?, CURDATE(), 'odendi', CURDATE())
-            ");
-            $taksit_stmt->execute([$firma_id, $odeme_tutari]);
+            // Kalan taksit sayısını hesapla
+            $kalan_taksit_sayisi = $firma['taksit_sayisi'] - $odenen_taksit_sayisi;
             
-            $pdo->commit();
-            $success_message = "Ödeme başarıyla kaydedildi!";
+            // KÜSURAT ÇÖZÜMÜ: Normal ve son taksit tutarlarını hesapla
+            $normal_taksit_tutari = floor($firma['toplam_borc'] / $firma['taksit_sayisi']);
+            $son_taksit_tutari = $firma['toplam_borc'] - ($normal_taksit_tutari * ($firma['taksit_sayisi'] - 1));
             
-            // Sayfayı yenile
-            header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $firma_id);
-            exit;
+            // ======= SON TAKSİT KONTROLÜ =======
+            if ($kalan_taksit_sayisi <= 1) {
+                // SON TAKSİT - KALAN BORÇ NE KADARSA O TUTARI ÖDE
+                $required_payment = $firma['kalan_borc'];
+                
+                if ($odeme_tutari != $required_payment) {
+                    $error_message = "SON TAKSİT: Kalan borç tutarını tam olarak ödemelisiniz: ₺" . number_format($required_payment, 2, ',', '.') . " TL";
+                    $pdo->rollback();
+                } else {
+                    // SON TAKSİT ÖDEMESİ - BORÇ TAMAMEN BİTİYOR
+                    
+                    // 1. Firmayı tamamen bitir
+                    $update_stmt = $pdo->prepare("
+                        UPDATE firmalar 
+                        SET kalan_borc = 0, durum = 'tamamlandi', aylik_odeme = 0
+                        WHERE id = ?
+                    ");
+                    $update_stmt->execute([$firma_id]);
+                    
+                    // 2. Son taksiti gerçek kalan borç tutarıyla güncelle
+                    $taksit_stmt = $pdo->prepare("
+                        INSERT INTO taksitler (firma_id, tutar, vade_tarihi, durum, odeme_tarihi) 
+                        VALUES (?, ?, CURDATE(), 'odendi', CURDATE())
+                    ");
+                    $taksit_stmt->execute([$firma_id, $required_payment]);
+                    
+                    $pdo->commit();
+                    $success_message = "🎉 SON TAKSİT ÖDENDİ! Borç tamamen kapandı! Ödenen: ₺" . number_format($required_payment, 2, ',', '.') . " - KALAN BORÇ: ₺0";
+                    
+                    // Sayfayı yenile
+                    header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $firma_id);
+                    exit;
+                }
+                
+            } else {
+                // NORMAL TAKSİT - NORMAL TAKSİT TUTARI KURALI
+                
+                if (abs($odeme_tutari - $normal_taksit_tutari) > 1) { // 1 TL tolerans
+                    $error_message = "Normal taksit için belirlenen tutarı ödemelisiniz: ₺" . number_format($normal_taksit_tutari, 2, ',', '.') . " TL";
+                    $pdo->rollback();
+                } else {
+                    // Normal taksit ödeme işlemi
+                    $yeni_kalan = $firma['kalan_borc'] - $normal_taksit_tutari;
+                    
+                    // Negatif olursa sıfırla
+                    if ($yeni_kalan < 0) $yeni_kalan = 0;
+                    
+                    $durum = ($yeni_kalan <= 0) ? 'tamamlandi' : 'aktif';
+                    
+                    // Firmayı güncelle
+                    $update_stmt = $pdo->prepare("
+                        UPDATE firmalar 
+                        SET kalan_borc = ?, durum = ? 
+                        WHERE id = ?
+                    ");
+                    $update_stmt->execute([$yeni_kalan, $durum, $firma_id]);
+                    
+                    // Ödeme kaydını taksitler tablosuna ekle
+                    $taksit_stmt = $pdo->prepare("
+                        INSERT INTO taksitler (firma_id, tutar, vade_tarihi, durum, odeme_tarihi) 
+                        VALUES (?, ?, CURDATE(), 'odendi', CURDATE())
+                    ");
+                    $taksit_stmt->execute([$firma_id, $normal_taksit_tutari]);
+                    
+                    $pdo->commit();
+                    
+                    if ($yeni_kalan <= 0) {
+                        $success_message = "🎉 BORÇ TAMAMLANDI! Ödenen: ₺" . number_format($normal_taksit_tutari, 2, ',', '.') . " - KALAN BORÇ: ₺0";
+                    } else {
+                        $success_message = "✅ Taksit ödendi! Ödenen: ₺" . number_format($normal_taksit_tutari, 2, ',', '.') . " - Kalan: ₺" . number_format($yeni_kalan, 2, ',', '.');
+                    }
+                    
+                    // Sayfayı yenile
+                    header("Location: " . $_SERVER['PHP_SELF'] . "?id=" . $firma_id);
+                    exit;
+                }
+            }
             
         } else {
-            $error_message = "Ödeme tutarı aylık ödeme miktarına (" . number_format($firma['aylik_odeme'], 0, ',', '.') . " TL) eşit olmalıdır!";
+            if ($odeme_tutari > $firma['kalan_borc']) {
+                $error_message = "Ödeme tutarı kalan borçtan fazla olamaz! Maksimum: ₺" . number_format($firma['kalan_borc'], 2, ',', '.');
+            } else {
+                $error_message = "Geçersiz ödeme tutarı!";
+            }
         }
         
     } catch(PDOException $e) {
@@ -226,6 +295,7 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firma Detay - <?php echo $firma ? htmlspecialchars($firma['firma_adi']) : 'Firma'; ?></title>
+    <!-- CSS kodu aynı kalacak - kısaltma için dahil etmiyorum -->
     <style>
         * {
             margin: 0;
@@ -736,6 +806,14 @@ try {
             <?php endif; ?>
             
             <?php if ($firma): ?>
+                <?php
+                // KÜSURAT ÇÖZÜMÜ: Hesaplamalar
+                $normal_taksit_tutari = floor($firma['toplam_borc'] / $firma['taksit_sayisi']);
+                $son_taksit_tutari = $firma['toplam_borc'] - ($normal_taksit_tutari * ($firma['taksit_sayisi'] - 1));
+                $odenen_taksit_sayisi = count($odemeler);
+                $kalan_taksit_sayisi = $firma['taksit_sayisi'] - $odenen_taksit_sayisi;
+                ?>
+                
                 <div class="firma-info">
                     <div class="firma-header">
                         <div class="firma-title">
@@ -761,12 +839,12 @@ try {
                             <div class="value">₺<?php echo number_format($firma['kalan_borc'], 0, ',', '.'); ?></div>
                         </div>
                         <div class="info-card">
-                            <h4>Aylık Ödeme</h4>
-                            <div class="value">₺<?php echo number_format($firma['aylik_odeme'], 0, ',', '.'); ?></div>
+                            <h4>Normal Taksit (İlk <?php echo $firma['taksit_sayisi'] - 1; ?>)</h4>
+                            <div class="value">₺<?php echo number_format($normal_taksit_tutari, 0, ',', '.'); ?></div>
                         </div>
                         <div class="info-card">
-                            <h4>Toplam Taksit</h4>
-                            <div class="value"><?php echo $firma['taksit_sayisi']; ?> Ay</div>
+                            <h4>Son Taksit (<?php echo $firma['taksit_sayisi']; ?>.)</h4>
+                            <div class="value">₺<?php echo number_format($son_taksit_tutari, 0, ',', '.'); ?></div>
                         </div>
                         <div class="info-card">
                             <h4>Ödenen Taksit</h4>
@@ -783,6 +861,19 @@ try {
                             <div class="progress-fill" style="width: <?php echo $progress; ?>%"></div>
                         </div>
                         <p><strong><?php echo number_format($progress, 1); ?>%</strong> tamamlandı</p>
+                        
+                        <!-- KÜSURAT BİLGİ KUTUSU -->
+                        <?php if ($kalan_taksit_sayisi <= 1 && $firma['kalan_borc'] > 0): ?>
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 4px solid #ffc107;">
+                            <strong style="color: #856404;">⚠️ SON TAKSİT:</strong> 
+                            <span style="color: #856404;">Bu son taksittir. Kalan borç tutarı <strong>₺<?php echo number_format($firma['kalan_borc'], 0, ',', '.'); ?></strong> olarak ödenmelidir.</span>
+                        </div>
+                        <?php else: ?>
+                        <div style="margin-top: 15px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 4px solid #4caf50;">
+                            <strong style="color: #2e7d32;">💡 Ödeme İpucu:</strong> 
+                            <span style="color: #2e7d32;">Normal taksit için <strong>₺<?php echo number_format($normal_taksit_tutari, 0, ',', '.'); ?></strong> tutarında ödeme yapılmalıdır.</span>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 
@@ -851,12 +942,12 @@ try {
         </div>
     </div>
 
-    <!-- Ödeme Modalı -->
+    <!-- DÜZELTME: Ödeme Modalı - KÜSURAT ÇÖZÜMLÜ -->
     <?php if ($firma && $firma['kalan_borc'] > 0): ?>
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('paymentModal')">&times;</span>
-            <h2>💰 Ödeme Ekle</h2>
+            <h2>💰 Ödeme Ekle (KÜSURAT ÇÖZÜMLÜ)</h2>
             <form method="POST">
                 <div class="form-group">
                     <label>Firma:</label>
@@ -866,13 +957,27 @@ try {
                     <label>Kalan Borç:</label>
                     <input type="text" value="₺<?php echo number_format($firma['kalan_borc'], 0, ',', '.'); ?>" readonly>
                 </div>
+                
+                <?php if ($kalan_taksit_sayisi <= 1): ?>
+                <!-- SON TAKSİT -->
                 <div class="form-group">
-                    <label>Aylık Ödeme Tutarı (Zorunlu):</label>
-                    <input type="number" name="odeme_tutari" value="<?php echo $firma['aylik_odeme']; ?>" readonly style="background: #e3f2fd; font-weight: bold; font-size: 16px; color: #1976d2;">
-                    <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
-                        * Ödeme tutarı aylık ödeme miktarına eşit olmalıdır (<?php echo number_format($firma['aylik_odeme'], 0, ',', '.'); ?> TL)
+                    <label>SON TAKSİT - Kalan Borç Tutarı (Zorunlu):</label>
+                    <input type="number" name="odeme_tutari" value="<?php echo $firma['kalan_borc']; ?>" readonly style="background: #fff3cd; font-weight: bold; font-size: 16px; color: #856404; border: 2px solid #ffc107;">
+                    <small style="color: #856404; font-size: 12px; margin-top: 5px; display: block;">
+                        * SON TAKSİT: Kalan borç tutarının tamamı ödenmelidir (₺<?php echo number_format($firma['kalan_borc'], 0, ',', '.'); ?> TL)
                     </small>
                 </div>
+                <?php else: ?>
+                <!-- NORMAL TAKSİT -->
+                <div class="form-group">
+                    <label>Normal Taksit Tutarı (Zorunlu):</label>
+                    <input type="number" name="odeme_tutari" value="<?php echo $normal_taksit_tutari; ?>" readonly style="background: #d4edda; font-weight: bold; font-size: 16px; color: #155724; border: 2px solid #28a745;">
+                    <small style="color: #155724; font-size: 12px; margin-top: 5px; display: block;">
+                        * Normal taksit için belirlenen tutar ödenmelidir (₺<?php echo number_format($normal_taksit_tutari, 0, ',', '.'); ?> TL)
+                    </small>
+                </div>
+                <?php endif; ?>
+                
                 <div style="text-align: right; margin-top: 25px;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('paymentModal')">İptal</button>
                     <button type="submit" name="add_payment" class="btn btn-success">💾 Ödeme Kaydet</button>

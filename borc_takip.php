@@ -59,7 +59,10 @@ if (isset($_POST['update_firma'])) {
     $baslangic_tarihi = $_POST['baslangic_tarihi'];
     
     try {
-        $yeni_taksit_sayisi = ceil($toplam_borc / $aylik_odeme);
+        $taksit_sayisi = ceil($toplam_borc / $aylik_odeme);
+        
+        // KÜSURAT DÜZELTME: Normal taksit tutarı
+        $normal_taksit_tutari = floor($toplam_borc / $taksit_sayisi);
         
         // Mevcut ödenen tutarı koru
         $current_stmt = $pdo->prepare("SELECT (toplam_borc - kalan_borc) as odenen FROM firmalar WHERE id = ?");
@@ -71,12 +74,12 @@ if (isset($_POST['update_firma'])) {
         if ($yeni_kalan < 0) $yeni_kalan = 0;
         
         $durum = ($yeni_kalan <= 0) ? 'tamamlandi' : 'aktif';
-        $final_aylik_odeme = ($yeni_kalan <= 0) ? 0 : $aylik_odeme;
+        $final_aylik_odeme = ($yeni_kalan <= 0) ? 0 : $normal_taksit_tutari;
         
         // Eğer tamamlanmış firmayı yeniden aktif hale getiriyorsak
         if ($yeni_kalan > 0 && $current_data && $current_data['odenen'] >= $toplam_borc) {
             $durum = 'aktif';
-            $final_aylik_odeme = $aylik_odeme;
+            $final_aylik_odeme = $normal_taksit_tutari;
         }
         
         $update_stmt = $pdo->prepare("
@@ -87,7 +90,7 @@ if (isset($_POST['update_firma'])) {
         ");
         $update_stmt->execute([
             $firma_adi, $sehir, $telefon, $toplam_borc, $yeni_kalan, 
-            $final_aylik_odeme, $baslangic_tarihi, $yeni_taksit_sayisi, $durum, $firma_id
+            $final_aylik_odeme, $baslangic_tarihi, $taksit_sayisi, $durum, $firma_id
         ]);
         
         $success_message = "Firma başarıyla güncellendi!";
@@ -97,7 +100,7 @@ if (isset($_POST['update_firma'])) {
     }
 }
 
-// Yeni firma ekleme işlemi
+// Yeni firma ekleme işlemi - KÜSURAT DÜZELTME
 if (isset($_POST['add_firma'])) {
     $firma_adi = $_POST['firma_adi'];
     $sehir = $_POST['sehir'];
@@ -109,25 +112,19 @@ if (isset($_POST['add_firma'])) {
     try {
         $taksit_sayisi = ceil($toplam_borc / $aylik_odeme);
         
+        // KÜSURAT DÜZELTME: Normal taksit tutarı
+        $normal_taksit_tutari = floor($toplam_borc / $taksit_sayisi);
+        
         $insert_stmt = $pdo->prepare("
             INSERT INTO firmalar (firma_adi, sehir, telefon, toplam_borc, kalan_borc, aylik_odeme, baslangic_tarihi, taksit_sayisi, durum) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'aktif')
         ");
-        $insert_stmt->execute([$firma_adi, $sehir, $telefon, $toplam_borc, $toplam_borc, $aylik_odeme, $baslangic_tarihi, $taksit_sayisi]);
+        $insert_stmt->execute([$firma_adi, $sehir, $telefon, $toplam_borc, $toplam_borc, $normal_taksit_tutari, $baslangic_tarihi, $taksit_sayisi]);
         
         $firma_id = $pdo->lastInsertId();
         
-        // Aylık ödeme zorunlu kontrol - minimum değer belirleme
-        if ($aylik_odeme < ($toplam_borc / 100)) { // En fazla 100 taksit
-            $aylik_odeme = ceil($toplam_borc / 100);
-        }
-        
-        // Aylik ödemeyi güncelle
-        $update_aylik = $pdo->prepare("UPDATE firmalar SET aylik_odeme = ? WHERE id = ?");
-        $update_aylik->execute([$aylik_odeme, $firma_id]);
-        
         // Otomatik taksit programı oluştur
-        createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, $baslangic_tarihi);
+        createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $normal_taksit_tutari, $baslangic_tarihi, $taksit_sayisi);
         
         $success_message = "Yeni firma başarıyla eklendi!";
         
@@ -159,7 +156,7 @@ if (isset($_POST['delete_firma'])) {
     }
 }
 
-// Ödeme ekleme işlemi - İYİLEŞTİRİLDİ
+// KÜSURAT DÜZELTME: Ödeme ekleme işlemi
 if (isset($_POST['add_payment'])) {
     $firma_id = $_POST['firma_id'];
     $odeme_tutari = $_POST['odeme_tutari'];
@@ -173,44 +170,113 @@ if (isset($_POST['add_payment'])) {
         $firma_stmt->execute([$firma_id]);
         $firma = $firma_stmt->fetch();
         
-        if ($firma && $odeme_tutari <= $firma['kalan_borc'] && $odeme_tutari > 0) {
-            // Kalan borcu güncelle
-            $yeni_kalan = $firma['kalan_borc'] - $odeme_tutari;
-            $durum = ($yeni_kalan <= 0) ? 'tamamlandi' : 'aktif';
-            $yeni_aylik_odeme = ($yeni_kalan <= 0) ? 0 : $firma['aylik_odeme']; // Aylık ödeme sıfırla
+        if ($firma && $odeme_tutari > 0 && $odeme_tutari <= $firma['kalan_borc']) {
             
-            $update_stmt = $pdo->prepare("
-                UPDATE firmalar 
-                SET kalan_borc = ?, durum = ?, aylik_odeme = ?
-                WHERE id = ?
-            ");
-            $update_stmt->execute([$yeni_kalan, $durum, $yeni_aylik_odeme, $firma_id]);
+            // Ödenen taksit sayısını hesapla
+            $odenen_taksit_stmt = $pdo->prepare("SELECT COUNT(*) as odenen_sayisi FROM taksitler WHERE firma_id = ? AND durum = 'odendi'");
+            $odenen_taksit_stmt->execute([$firma_id]);
+            $odenen_taksit_sayisi = $odenen_taksit_stmt->fetch()['odenen_sayisi'];
             
-            // En eski ödenmemiş taksiti güncelle - vade_tarihi ile sırala
-            $taksit_update = $pdo->prepare("
-                UPDATE taksitler 
-                SET durum = 'odendi', odeme_tarihi = ?, tutar = ?
-                WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme') 
-                ORDER BY vade_tarihi ASC 
-                LIMIT 1
-            ");
-            $taksit_update->execute([$odeme_tarihi, $odeme_tutari, $firma_id]);
+            // Kalan taksit sayısını hesapla
+            $kalan_taksit_sayisi = $firma['taksit_sayisi'] - $odenen_taksit_sayisi;
             
-            // Eğer borç tamamen bittiyse, kalan tüm taksitleri "tamamlandi" yap
-            if ($yeni_kalan <= 0) {
-                $complete_stmt = $pdo->prepare("
-                    UPDATE taksitler 
-                    SET durum = 'tamamlandi' 
-                    WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme')
-                ");
-                $complete_stmt->execute([$firma_id]);
+            // KÜSURAT DÜZELTME: Normal ve son taksit hesaplama
+            $normal_taksit_tutari = floor($firma['toplam_borc'] / $firma['taksit_sayisi']);
+            
+            // SON TAKSİT KONTROLÜ
+            if ($kalan_taksit_sayisi <= 1) {
+                // SON TAKSİT - Kalan borç ne kadarsa onu öde
+                $required_payment = $firma['kalan_borc'];
+                
+                if ($odeme_tutari != $required_payment) {
+                    $error_message = "SON TAKSİT: Kalan borç tutarını ödemelisiniz: ₺" . number_format($required_payment, 2, ',', '.') . " TL";
+                    $pdo->rollback();
+                } else {
+                    // Firmayı tamamen bitir
+                    $update_stmt = $pdo->prepare("
+                        UPDATE firmalar 
+                        SET kalan_borc = 0, durum = 'tamamlandi', aylik_odeme = 0
+                        WHERE id = ?
+                    ");
+                    $update_stmt->execute([$firma_id]);
+                    
+                    // Son taksiti kaydet
+                    $taksit_update = $pdo->prepare("
+                        UPDATE taksitler 
+                        SET durum = 'odendi', odeme_tarihi = ?, tutar = ?
+                        WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme') 
+                        ORDER BY vade_tarihi ASC 
+                        LIMIT 1
+                    ");
+                    $taksit_update->execute([$odeme_tarihi, $required_payment, $firma_id]);
+                    
+                    // Diğer bekleyen taksitleri tamamla
+                    $complete_stmt = $pdo->prepare("
+                        UPDATE taksitler 
+                        SET durum = 'tamamlandi' 
+                        WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme')
+                    ");
+                    $complete_stmt->execute([$firma_id]);
+                    
+                    $pdo->commit();
+                    $success_message = "🎉 SON TAKSİT ÖDENDİ! Borç tamamen kapandı! Ödenen: ₺" . number_format($required_payment, 2, ',', '.');
+                }
+                
+            } else {
+                // NORMAL TAKSİT
+                if (abs($odeme_tutari - $normal_taksit_tutari) > 1) {
+                    $error_message = "Normal taksit tutarını ödemelisiniz: ₺" . number_format($normal_taksit_tutari, 2, ',', '.') . " TL";
+                    $pdo->rollback();
+                } else {
+                    // Normal taksit ödeme
+                    $yeni_kalan = $firma['kalan_borc'] - $normal_taksit_tutari;
+                    if ($yeni_kalan < 0) $yeni_kalan = 0;
+                    
+                    $durum = ($yeni_kalan <= 0) ? 'tamamlandi' : 'aktif';
+                    $yeni_aylik_odeme = ($yeni_kalan <= 0) ? 0 : $normal_taksit_tutari;
+                    
+                    // Firmayı güncelle
+                    $update_stmt = $pdo->prepare("
+                        UPDATE firmalar 
+                        SET kalan_borc = ?, durum = ?, aylik_odeme = ?
+                        WHERE id = ?
+                    ");
+                    $update_stmt->execute([$yeni_kalan, $durum, $yeni_aylik_odeme, $firma_id]);
+                    
+                    // Taksiti güncelle
+                    $taksit_update = $pdo->prepare("
+                        UPDATE taksitler 
+                        SET durum = 'odendi', odeme_tarihi = ?, tutar = ?
+                        WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme') 
+                        ORDER BY vade_tarihi ASC 
+                        LIMIT 1
+                    ");
+                    $taksit_update->execute([$odeme_tarihi, $normal_taksit_tutari, $firma_id]);
+                    
+                    // Eğer borç bittiyse kalan taksitleri tamamla
+                    if ($yeni_kalan <= 0) {
+                        $complete_stmt = $pdo->prepare("
+                            UPDATE taksitler 
+                            SET durum = 'tamamlandi' 
+                            WHERE firma_id = ? AND durum IN ('bekliyor', 'gecikme')
+                        ");
+                        $complete_stmt->execute([$firma_id]);
+                        
+                        $success_message = "🎉 BORÇ TAMAMLANDI! Ödenen: ₺" . number_format($normal_taksit_tutari, 2, ',', '.');
+                    } else {
+                        $success_message = "✅ Taksit ödendi! Ödenen: ₺" . number_format($normal_taksit_tutari, 2, ',', '.') . " - Kalan: ₺" . number_format($yeni_kalan, 2, ',', '.');
+                    }
+                    
+                    $pdo->commit();
+                }
             }
             
-            $pdo->commit();
-            $success_message = "Ödeme başarıyla kaydedildi!";
-            
         } else {
-            $error_message = "Geçersiz ödeme tutarı!";
+            if ($odeme_tutari > $firma['kalan_borc']) {
+                $error_message = "Ödeme tutarı kalan borçtan fazla olamaz! Maksimum: ₺" . number_format($firma['kalan_borc'], 2, ',', '.');
+            } else {
+                $error_message = "Geçersiz ödeme tutarı!";
+            }
         }
         
     } catch(PDOException $e) {
@@ -238,7 +304,7 @@ try {
     $firmalar = [];
 }
 
-// Toplam istatistikler ve ortalamalar - GENİŞLETİLDİ
+// Toplam istatistikler
 try {
     $stats_stmt = $pdo->prepare("
         SELECT 
@@ -262,29 +328,28 @@ try {
     ];
 }
 
-// Otomatik taksit programı oluşturma fonksiyonu - DÜZELTİLDİ
-function createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, $baslangic_tarihi) {
-    $taksit_sayisi = ceil($toplam_borc / $aylik_odeme);
+// KÜSURAT DÜZELTME: Taksit programı oluşturma fonksiyonu
+function createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, $baslangic_tarihi, $taksit_sayisi) {
     $baslangic_date = new DateTime($baslangic_tarihi);
+    
+    // KÜSURAT ÇÖZÜMÜ
+    $normal_taksit_tutari = floor($toplam_borc / $taksit_sayisi);
+    $son_taksit_tutari = $toplam_borc - ($normal_taksit_tutari * ($taksit_sayisi - 1));
     
     for ($i = 1; $i <= $taksit_sayisi; $i++) {
         $vade_tarihi = clone $baslangic_date;
-        $vade_tarihi->add(new DateInterval('P' . (($i - 1) * 30) . 'D')); // Her ay 30 gün
+        $vade_tarihi->add(new DateInterval('P' . (($i - 1) * 30) . 'D'));
         
-        $tutar = ($i == $taksit_sayisi) ? $toplam_borc - (($taksit_sayisi - 1) * $aylik_odeme) : $aylik_odeme;
+        // Son taksit farklı tutarda
+        $tutar = ($i == $taksit_sayisi) ? $son_taksit_tutari : $normal_taksit_tutari;
         
-        // Gecikme kontrolü (15 gün sonra)
+        // Gecikme kontrolü
         $today = new DateTime();
         $gecikme_tarihi = clone $vade_tarihi;
         $gecikme_tarihi->add(new DateInterval('P15D'));
         
-        $durum = 'bekliyor';
+        $durum = ($today > $gecikme_tarihi) ? 'gecikme' : 'bekliyor';
         
-        if ($today > $gecikme_tarihi) {
-            $durum = 'gecikme';
-        }
-        
-        // taksit_no sütunu kaldırıldı - sadece mevcut sütunları kullan
         $insert_taksit = $pdo->prepare("
             INSERT INTO taksitler (firma_id, tutar, vade_tarihi, durum) 
             VALUES (?, ?, ?, ?)
@@ -293,7 +358,7 @@ function createInstallmentSchedule($pdo, $firma_id, $toplam_borc, $aylik_odeme, 
     }
 }
 
-// Yıllık özet hesaplama - İYİLEŞTİRİLDİ
+// Yıllık özet hesaplama
 function getYearlyBreakdown($firmalar) {
     $yearly_data = [];
     
@@ -305,40 +370,47 @@ function getYearlyBreakdown($firmalar) {
         $current_date = clone $baslangic_tarihi;
         $taksit_no = 1;
         
-        while ($kalan_borc > 0) {
+        // KÜSURAT DÜZELTME
+        $normal_taksit_tutari = floor($firma['toplam_borc'] / $firma['taksit_sayisi']);
+        
+        while ($kalan_borc > 0 && $taksit_no <= $firma['taksit_sayisi']) {
             $year = (int)$current_date->format('Y');
             
             if (!isset($yearly_data[$year])) {
                 $yearly_data[$year] = ['toplam' => 0, 'odenen' => 0, 'kalan' => 0, 'aylik_ortalama' => 0, 'firma_sayisi' => 0];
             }
             
-            $taksit_tutari = min($firma['aylik_odeme'], $kalan_borc);
+            // Son taksit kontrolü
+            $taksit_tutari = ($taksit_no == $firma['taksit_sayisi']) ? 
+                $firma['toplam_borc'] - ($normal_taksit_tutari * ($firma['taksit_sayisi'] - 1)) : 
+                $normal_taksit_tutari;
+            
+            $taksit_tutari = min($taksit_tutari, $kalan_borc);
+            
             $yearly_data[$year]['toplam'] += $taksit_tutari;
-            $yearly_data[$year]['aylik_ortalama'] += $firma['aylik_odeme'];
+            $yearly_data[$year]['aylik_ortalama'] += $normal_taksit_tutari;
             $yearly_data[$year]['firma_sayisi']++;
             
             // Ödenen tutarları hesapla
             $odenen_tutar = $firma['toplam_borc'] - $firma['kalan_borc'];
-            if ($odenen_tutar >= ($taksit_no * $firma['aylik_odeme'])) {
+            if ($odenen_tutar >= ($taksit_no * $normal_taksit_tutari)) {
                 $yearly_data[$year]['odenen'] += $taksit_tutari;
             }
             
             $kalan_borc -= $taksit_tutari;
-            $current_date->add(new DateInterval('P30D')); // 30 gün ekle
+            $current_date->add(new DateInterval('P30D'));
             $taksit_no++;
             
-            // Güvenlik için sonsuz döngüyü önle
             if ($taksit_no > 1000) break;
         }
     }
     
-    // Kalan tutarları ve ortalamaları hesapla
+    // Kalan tutarları hesapla
     foreach ($yearly_data as $year => &$data) {
         $data['kalan'] = $data['toplam'] - $data['odenen'];
         $data['aylik_ortalama'] = $data['firma_sayisi'] > 0 ? $data['aylik_ortalama'] / $data['firma_sayisi'] : 0;
     }
     
-    // Yılları sırala
     ksort($yearly_data);
     
     return array_filter($yearly_data, function($data) {
@@ -906,6 +978,17 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             color: #e74c3c;
         }
         
+        /* Sadece sorunlu kolonların genişlik düzeltmesi */
+        .firms-table th:nth-child(7),  /* Kalan Borç */
+        .firms-table td:nth-child(7) {
+            min-width: 140px;
+        }
+        
+        .firms-table th:nth-child(6),  /* Ödenen Tutar */
+        .firms-table td:nth-child(6) {
+            min-width: 130px;
+        }
+        
         .btn {
             padding: 10px 20px;
             border: none;
@@ -1027,6 +1110,8 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             border-radius: 15px;
             width: 90%;
             max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.2);
             animation: slideIn 0.3s ease;
@@ -1068,7 +1153,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             color: #2c3e50;
         }
         
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 15px;
             border: 2px solid #ddd;
@@ -1077,10 +1162,20 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             transition: all 0.3s ease;
         }
         
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 15px rgba(52, 152, 219, 0.2);
+        }
+        
+        .calculation-info {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(155, 89, 182, 0.05));
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border-left: 4px solid #3498db;
+            font-size: 14px;
+            color: #2c3e50;
         }
         
         .empty-state {
@@ -1150,19 +1245,20 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         
         .refresh-bottom {
             position: fixed;
-            top: 80px;
-            right: 20px;
+            top: 85px;
+            right: 0px;
             z-index: 1;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            border-radius: 50px;
+            border-radius: 25px;
             pointer-events: auto;
             opacity: 0.8;
             transition: all 0.3s ease;
+             transform: scale(0.8); 
         }
         
         .refresh-bottom:hover {
             opacity: 1;
-            transform: scale(1.05);
+            transform: scale(0.9);
         }
         
         /* Container'a relative position ekle */
@@ -1211,7 +1307,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             }
         }
         
-            @media (max-width: 768px) {
+        @media (max-width: 768px) {
             .header {
                 flex-direction: column;
                 gap: 10px;
@@ -1274,7 +1370,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
         <div class="header">
             <div class="header-left">
                 <div class="header-logo"></div>
-                <h1>Konya Belediyesi - Borç Takip Sistemi</h1>
+                <h1>Konya Büyükşehir Belediyesi - Borç Takip Sistemi</h1>
             </div>
             <div class="user-info">
                 <?php echo htmlspecialchars($_SESSION['username']); ?> - <?php echo strtoupper($_SESSION['role']); ?>
@@ -1403,7 +1499,9 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                                     } else if ($firma['aylik_odeme'] == 0) {
                                         echo "₺0";
                                     } else {
-                                        echo "₺" . number_format($firma['aylik_odeme'], 0, ',', '.');
+                                        // Eşit taksit tutarını göster
+                                        $esit_taksit_tutari = round($firma['toplam_borc'] / $firma['taksit_sayisi']);
+                                        echo "₺" . number_format($esit_taksit_tutari, 0, ',', '.');
                                     }
                                     ?>
                                 </td>
@@ -1475,11 +1573,11 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             <form method="POST">
                 <div class="form-group">
                     <label>Firma Adı:</label>
-                    <input type="text" name="firma_adi" required oninput="capitalizeFirstLetter(this)">
+                    <input type="text" name="firma_adi" required oninput="capitalizeWords(this)">
                 </div>
                 <div class="form-group">
                     <label>Şehir:</label>
-                    <input type="text" name="sehir" required>
+                    <input type="text" name="sehir" required oninput="capitalizeWords(this)">
                 </div>
                 <div class="form-group">
                     <label>Telefon:</label>
@@ -1487,15 +1585,35 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 </div>
                 <div class="form-group">
                     <label>Toplam Borç (₺):</label>
-                    <input type="number" name="toplam_borc" required min="1" step="0.01">
+                    <input type="number" name="toplam_borc" id="add_toplam_borc" required min="1" step="0.01" oninput="calculateInstallments('add')">
                 </div>
                 <div class="form-group">
+                    <label>Ödeme Şekli Seçin:</label>
+                    <select id="add_payment_type" onchange="handlePaymentTypeChange('add')">
+                        <option value="monthly">Aylık Ödeme Tutarı Gir</option>
+                        <option value="installments">Taksit Sayısı Seç</option>
+                    </select>
+                </div>
+                <div class="form-group" id="add_monthly_group">
                     <label>Aylık Ödeme (₺):</label>
-                    <input type="number" name="aylik_odeme" required min="1" step="0.01">
+                    <input type="number" name="aylik_odeme" id="add_aylik_odeme" required min="1" step="0.01" oninput="calculateInstallments('add')">
+                </div>
+                <div class="form-group" id="add_installments_group" style="display: none;">
+                    <label>Taksit Sayısı:</label>
+                    <select id="add_taksit_sayisi" onchange="calculateMonthlyPayment('add')">
+                        <option value="">Taksit sayısı seçin</option>
+                        <?php for($i = 3; $i <= 60; $i++): ?>
+                            <option value="<?php echo $i; ?>"><?php echo $i; ?> Taksit</option>
+                        <?php endfor; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Başlangıç Tarihi:</label>
                     <input type="date" name="baslangic_tarihi" required>
+                </div>
+                <div class="calculation-info" id="add_calculation_info">
+                    <strong>💡 Hesaplama Bilgisi:</strong><br>
+                    <span id="add_calculation_text">Lütfen tutarları girin</span>
                 </div>
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addFirmaModal')">İptal</button>
@@ -1514,11 +1632,11 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 <input type="hidden" name="firma_id" id="edit_firma_id">
                 <div class="form-group">
                     <label>Firma Adı:</label>
-                    <input type="text" name="firma_adi" id="edit_firma_adi" required oninput="capitalizeFirstLetter(this)">
+                    <input type="text" name="firma_adi" id="edit_firma_adi" required oninput="capitalizeWords(this)">
                 </div>
                 <div class="form-group">
                     <label>Şehir:</label>
-                    <input type="text" name="sehir" id="edit_sehir" required>
+                    <input type="text" name="sehir" id="edit_sehir" required oninput="capitalizeWords(this)">
                 </div>
                 <div class="form-group">
                     <label>Telefon:</label>
@@ -1526,15 +1644,35 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 </div>
                 <div class="form-group">
                     <label>Toplam Borç (₺):</label>
-                    <input type="number" name="toplam_borc" id="edit_toplam_borc" required min="1" step="0.01">
+                    <input type="number" name="toplam_borc" id="edit_toplam_borc" required min="1" step="0.01" oninput="calculateInstallments('edit')">
                 </div>
                 <div class="form-group">
+                    <label>Ödeme Şekli Seçin:</label>
+                    <select id="edit_payment_type" onchange="handlePaymentTypeChange('edit')">
+                        <option value="monthly">Aylık Ödeme Tutarı Gir</option>
+                        <option value="installments">Taksit Sayısı Seç</option>
+                    </select>
+                </div>
+                <div class="form-group" id="edit_monthly_group">
                     <label>Aylık Ödeme (₺):</label>
-                    <input type="number" name="aylik_odeme" id="edit_aylik_odeme" required min="1" step="0.01">
+                    <input type="number" name="aylik_odeme" id="edit_aylik_odeme" required min="1" step="0.01" oninput="calculateInstallments('edit')">
+                </div>
+                <div class="form-group" id="edit_installments_group" style="display: none;">
+                    <label>Taksit Sayısı:</label>
+                    <select id="edit_taksit_sayisi" onchange="calculateMonthlyPayment('edit')">
+                        <option value="">Taksit sayısı seçin</option>
+                        <?php for($i = 3; $i <= 60; $i++): ?>
+                            <option value="<?php echo $i; ?>"><?php echo $i; ?> Taksit</option>
+                        <?php endfor; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Başlangıç Tarihi:</label>
                     <input type="date" name="baslangic_tarihi" id="edit_baslangic_tarihi" required>
+                </div>
+                <div class="calculation-info" id="edit_calculation_info">
+                    <strong>💡 Hesaplama Bilgisi:</strong><br>
+                    <span id="edit_calculation_text">Lütfen tutarları girin</span>
                 </div>
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editFirmaModal')">İptal</button>
@@ -1581,6 +1719,112 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             });
         }
 
+       function capitalizeWords(input) {
+    const exceptions = ["A.Ş.", "LTD.", "LTD", "AŞ", "AŞ."]; // büyük harf kalması gerekenler
+
+    let words = input.value.split(' ').map(word => {
+        if (exceptions.includes(word.toUpperCase())) {
+            return word.toUpperCase(); // Özel ifadeyi tamamen büyük yap
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // Normal kelime
+    });
+
+    input.value = words.join(' ');
+}
+
+
+        // Ödeme tipi değişikliği
+        function handlePaymentTypeChange(prefix) {
+            const paymentType = document.getElementById(prefix + '_payment_type').value;
+            const monthlyGroup = document.getElementById(prefix + '_monthly_group');
+            const installmentsGroup = document.getElementById(prefix + '_installments_group');
+            const aylikOdemeInput = document.getElementById(prefix + '_aylik_odeme');
+            
+            if (paymentType === 'monthly') {
+                monthlyGroup.style.display = 'block';
+                installmentsGroup.style.display = 'none';
+                aylikOdemeInput.required = true;
+                document.getElementById(prefix + '_taksit_sayisi').required = false;
+            } else {
+                monthlyGroup.style.display = 'none';
+                installmentsGroup.style.display = 'block';
+                aylikOdemeInput.required = false;
+                document.getElementById(prefix + '_taksit_sayisi').required = true;
+            }
+            
+            calculateInstallments(prefix);
+        }
+
+        // Taksit hesaplama
+        function calculateInstallments(prefix) {
+            const toplamBorc = parseFloat(document.getElementById(prefix + '_toplam_borc').value) || 0;
+            const paymentType = document.getElementById(prefix + '_payment_type').value;
+            const calculationText = document.getElementById(prefix + '_calculation_text');
+            
+            if (toplamBorc <= 0) {
+                calculationText.innerHTML = 'Lütfen geçerli bir toplam borç miktarı girin';
+                return;
+            }
+            
+            if (paymentType === 'monthly') {
+                const aylikOdeme = parseFloat(document.getElementById(prefix + '_aylik_odeme').value) || 0;
+                
+                if (aylikOdeme <= 0) {
+                    calculationText.innerHTML = 'Lütfen geçerli bir aylık ödeme tutarı girin';
+                    return;
+                }
+                
+                // Tam taksit sayısını hesapla - küsurat fark olmasın
+                const taksitSayisi = Math.ceil(toplamBorc / aylikOdeme);
+                
+                // Toplam tutarı eşit taksitlere böl - hepsi aynı miktarda olsun
+                const esitTaksitTutari = Math.round(toplamBorc / taksitSayisi);
+                const toplamOdeme = esitTaksitTutari * taksitSayisi;
+                const fark = toplamOdeme - toplamBorc;
+                
+                calculationText.innerHTML = `
+                    📊 <strong>Hesaplama:</strong><br>
+                    • Toplam Taksit Sayısı: <strong>${taksitSayisi} ay</strong><br>
+                    • Tüm Taksitler: <strong>₺${esitTaksitTutari.toLocaleString()}</strong> (eşit miktarda)<br>
+                    • Toplam Ödeme: <strong>₺${toplamOdeme.toLocaleString()}</strong><br>
+                    ${fark > 0 ? `• Ek Ödeme: <strong style="color: #f39c12;">+₺${fark.toLocaleString()}</strong>` : ''}
+                    ${fark < 0 ? `• İndirim: <strong style="color: #27ae60;">₺${Math.abs(fark).toLocaleString()}</strong>` : ''}
+                `;
+            } else {
+                calculationText.innerHTML = 'Taksit sayısını seçin';
+            }
+        }
+
+        // Aylık ödeme hesaplama
+        function calculateMonthlyPayment(prefix) {
+            const toplamBorc = parseFloat(document.getElementById(prefix + '_toplam_borc').value) || 0;
+            const taksitSayisi = parseInt(document.getElementById(prefix + '_taksit_sayisi').value) || 0;
+            const calculationText = document.getElementById(prefix + '_calculation_text');
+            const aylikOdemeInput = document.getElementById(prefix + '_aylik_odeme');
+            
+            if (toplamBorc <= 0 || taksitSayisi <= 0) {
+                calculationText.innerHTML = 'Lütfen geçerli değerler girin';
+                return;
+            }
+            
+            // Eşit taksitler için hesaplama - küsurat yok
+            const esitTaksitTutari = Math.round(toplamBorc / taksitSayisi);
+            const toplamOdeme = esitTaksitTutari * taksitSayisi;
+            const fark = toplamOdeme - toplamBorc;
+            
+            // Aylık ödeme alanına otomatik değer yazma
+            aylikOdemeInput.value = esitTaksitTutari;
+            
+            calculationText.innerHTML = `
+                📊 <strong>Hesaplama:</strong><br>
+                • Toplam Taksit Sayısı: <strong>${taksitSayisi} ay</strong><br>
+                • Tüm Taksitler: <strong>₺${esitTaksitTutari.toLocaleString()}</strong> (eşit miktarda)<br>
+                • Toplam Ödeme: <strong>₺${toplamOdeme.toLocaleString()}</strong><br>
+                ${fark > 0 ? `• Ek Ödeme: <strong style="color: #f39c12;">+₺${fark.toLocaleString()}</strong>` : ''}
+                ${fark < 0 ? `• İndirim: <strong style="color: #27ae60;">₺${Math.abs(fark).toLocaleString()}</strong>` : ''}
+            `;
+        }
+
         function showAddFirmaModal() {
             document.getElementById('addFirmaModal').style.display = 'block';
         }
@@ -1615,7 +1859,8 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                         kalanBorc: parseFloat(cells[6].textContent.replace(/[₺,.]/g, '')),
                         taksitSayisi: parseInt(cells[7].textContent),
                         baslangicTarihi: cells[8].textContent,
-                        aylikOdeme: parseFloat(cells[9].textContent.replace(/[₺,.]/g, '')) || 0
+                        // Eşit taksit tutarını hesapla - tablodaki değeri değil
+                        aylikOdeme: Math.round(parseFloat(cells[4].textContent.replace(/[₺,.]/g, '')) / parseInt(cells[7].textContent))
                     };
                 }
             });
@@ -1625,15 +1870,44 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 return;
             }
             
+            // Eşit taksit tutarını hesapla
+            const esitTaksitTutari = Math.round(firmaData.toplamBorc / firmaData.taksitSayisi);
+            
+            // Ödenen taksit sayısını hesapla - eşit taksit tutarına göre
+            const toplamOdenen = firmaData.toplamBorc - firmaData.kalanBorc;
+            const odenenTaksitSayisi = Math.floor(toplamOdenen / esitTaksitTutari);
+            
+            // Kalan taksit sayısını hesapla - SON TAKSİT KONTROLÜ İÇİN
+            const kalanTaksitSayisi = firmaData.taksitSayisi - odenenTaksitSayisi;
+            
             let html = `
                 <div style="margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-radius: 12px; border-left: 5px solid #2196f3;">
                     <h3 style="margin-bottom: 15px; color: #1976d2; font-size: 18px;">📋 ${firmaData.firmaAdi} - Taksit Bilgileri</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div><strong>Toplam Taksit:</strong> ${firmaData.taksitSayisi}</div>
-                        <div><strong>Aylık Ödeme:</strong> ₺${firmaData.aylikOdeme.toLocaleString()}</div>
+                        <div><strong>Eşit Taksit Tutarı:</strong> ₺${esitTaksitTutari.toLocaleString()}</div>
                         <div><strong>Kalan Borç:</strong> ₺${firmaData.kalanBorc.toLocaleString()}</div>
                         <div><strong>Ödenen:</strong> ₺${firmaData.odenenTutar.toLocaleString()}</div>
+                    </div>`;
+            
+            // SON TAKSİT ÖZEL MESAJI
+            if (kalanTaksitSayisi <= 1 && firmaData.kalanBorc > 0) {
+                html += `
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <strong style="color: #856404;">⚠️ SON TAKSİT:</strong> 
+                        <span style="color: #856404;">Bu son taksittir. Kalan borç tutarı <strong>₺${firmaData.kalanBorc.toLocaleString()}</strong> olarak ödenmelidir.</span>
                     </div>
+                `;
+            } else {
+                html += `
+                    <div style="margin-top: 15px; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 4px solid #4caf50;">
+                        <strong style="color: #2e7d32;">💡 Ödeme İpucu:</strong> 
+                        <span style="color: #2e7d32;">Normal taksit için <strong>₺${esitTaksitTutari.toLocaleString()}</strong> tutarında ödeme yapılmalıdır.</span>
+                    </div>
+                `;
+            }
+            
+            html += `
                 </div>
                 <div style="overflow-x: auto;">
                 <table class="taksit-table">
@@ -1641,7 +1915,7 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                         <tr>
                             <th>Taksit No</th>
                             <th>Vade Tarihi</th>
-                            <th>Asıl Tutar</th>
+                            <th>Taksit Tutarı</th>
                             <th>Gecikme Faizi</th>
                             <th>Toplam Tutar</th>
                             <th>Durum</th>
@@ -1656,10 +1930,6 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             const baslangicDate = new Date(year, month - 1, day);
             const today = new Date();
             
-            // Ödenen taksit sayısını hesapla
-            const toplamOdenen = firmaData.toplamBorc - firmaData.kalanBorc;
-            const odenenTaksitSayisi = Math.floor(toplamOdenen / firmaData.aylikOdeme);
-            
             for (let i = 1; i <= firmaData.taksitSayisi; i++) {
                 const taksitDate = new Date(baslangicDate);
                 taksitDate.setDate(taksitDate.getDate() + ((i - 1) * 30)); // Her ay 30 gün
@@ -1668,41 +1938,29 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
                 gecikmeDate.setDate(gecikmeDate.getDate() + 15); // 15 gün gecikme süresi
                 
                 let durum = '';
-                let durumClass = '';
                 let durumStyle = '';
                 let odemeGecmisi = '-';
-                let asilTutar = firmaData.aylikOdeme;
+                let asilTutar = esitTaksitTutari; // Tüm taksitler eşit
                 let gecikmeFaizi = 0;
                 let toplamTutar = asilTutar;
                 
-                // Son taksitin tutarını düzelt
-                if (i === firmaData.taksitSayisi) {
-                    asilTutar = firmaData.toplamBorc - ((firmaData.taksitSayisi - 1) * firmaData.aylikOdeme);
-                    toplamTutar = asilTutar;
-                }
-                
                 if (i <= odenenTaksitSayisi) {
                     durum = 'ÖDENDİ ✅';
-                    durumClass = 'status-badge status-tamamlandi';
                     durumStyle = 'background: linear-gradient(135deg, #4caf50, #45a049); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                     odemeGecmisi = taksitDate.toLocaleDateString('tr-TR');
                 } else if (firmaData.kalanBorc <= 0) {
                     durum = 'TAMAMLANDI ✅';
-                    durumClass = 'status-badge status-tamamlandi';
                     durumStyle = 'background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 } else if (today > gecikmeDate) {
                     durum = 'GECİKME ⚠️';
-                    durumClass = 'status-badge status-gecikme';
                     durumStyle = 'background: linear-gradient(135deg, #ff5722, #d32f2f); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                     gecikmeFaizi = asilTutar * 0.02; // %2 faiz
                     toplamTutar = asilTutar + gecikmeFaizi;
                 } else if (today > taksitDate) {
                     durum = 'VADESİ GEÇTİ ⏰';
-                    durumClass = 'status-badge status-gecikme';
                     durumStyle = 'background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 } else {
                     durum = 'BEKLİYOR ⏳';
-                    durumClass = 'status-badge status-aktif';
                     durumStyle = 'background: linear-gradient(135deg, #607d8b, #455a64); color: white; padding: 8px 15px; border-radius: 20px; font-weight: 600;';
                 }
                 
@@ -1722,6 +1980,9 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             html += '</tbody></table></div>';
             document.getElementById('taksitContent').innerHTML = html;
             document.getElementById('taksitModal').style.display = 'block';
+            
+            // Eşit taksit tutarını global değişkende sakla (firma_detay.php için)
+            window.esitTaksitTutari = esitTaksitTutari;
         }
 
         function showEditFirmaModal(id, nama, sehir, telefon, toplam_borc, aylik_odeme, baslangic_tarihi) {
@@ -1733,6 +1994,9 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
             document.getElementById('edit_aylik_odeme').value = aylik_odeme;
             document.getElementById('edit_baslangic_tarihi').value = baslangic_tarihi;
             document.getElementById('editFirmaModal').style.display = 'block';
+            
+            // Hesaplamaları güncelle
+            calculateInstallments('edit');
         }
 
         function confirmDelete(firmaId, firmaAdi) {
@@ -1744,13 +2008,6 @@ $yearly_breakdown = getYearlyBreakdown($firmalar);
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
-        }
-
-        function capitalizeFirstLetter(input) {
-            let value = input.value;
-            if (value.length > 0) {
-                input.value = value.charAt(0).toUpperCase() + value.slice(1);
-            }
         }
 
         // Modal kapatma - ESC tuşu ve X butonu
